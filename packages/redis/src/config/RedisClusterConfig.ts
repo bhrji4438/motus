@@ -25,7 +25,7 @@ export interface RedisClusterConfig {
 
 /** Default Redis Cluster config. */
 export const DEFAULT_CLUSTER_CONFIG: RedisClusterConfig = {
-  nodes: [{ host: 'localhost', port: 6379 }],
+  nodes: [{ host: "localhost", port: 6379 }],
   maxRedirections: 16,
   slotsRefreshIntervalMs: 5000,
   commandTimeoutMs: 2000,

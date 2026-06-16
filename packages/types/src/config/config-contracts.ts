@@ -5,7 +5,7 @@ export interface ServerConfig {
   readonly port: number;
   readonly host: string;
   readonly jwtSecret: string;
-  readonly logLevel: 'debug' | 'info' | 'warn' | 'error';
+  readonly logLevel: "debug" | "info" | "warn" | "error";
 }
 
 /**
@@ -43,7 +43,7 @@ export interface TelemetryConfig {
  * Default search boundaries and strategy algorithms for candidate scoring.
  */
 export interface MatchingConfig {
-  readonly defaultStrategy: 'distance' | 'eta';
+  readonly defaultStrategy: "distance" | "eta";
   readonly initialRadiusMeters: number;
   readonly maxRadiusMeters: number;
 }

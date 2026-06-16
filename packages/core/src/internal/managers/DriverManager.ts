@@ -4,12 +4,17 @@ import {
   TenantId,
   RegisterDriverCommand,
   UpdateDriverCommand,
-  DriverStatus
-} from '@motus/types';
-import { IDriverRepository, IEventBus, IClock, IIdGenerator } from '@/internal/interfaces/ports.js';
-import { DriverEntity } from '@/internal/entities/entities.js';
-import { ErrorFactory } from '@/internal/errors/ErrorFactory.js';
-import { StateMachineManager } from '@/internal/state/StateMachineManager.js';
+  DriverStatus,
+} from "@motus/types";
+import {
+  IDriverRepository,
+  IEventBus,
+  IClock,
+  IIdGenerator,
+} from "@/internal/interfaces/ports.js";
+import { DriverEntity } from "@/internal/entities/entities.js";
+import { ErrorFactory } from "@/internal/errors/ErrorFactory.js";
+import { StateMachineManager } from "@/internal/state/StateMachineManager.js";
 
 export class DriverManager {
   private readonly stateMachine = new StateMachineManager();
@@ -22,7 +27,10 @@ export class DriverManager {
   ) {}
 
   public async registerDriver(command: RegisterDriverCommand): Promise<Driver> {
-    const existing = await this.driverRepo.get(command.tenantId, command.driverId);
+    const existing = await this.driverRepo.get(
+      command.tenantId,
+      command.driverId
+    );
     if (existing) {
       return existing; // Idempotency
     }
@@ -43,7 +51,10 @@ export class DriverManager {
   }
 
   public async updateDriver(command: UpdateDriverCommand): Promise<Driver> {
-    const driver = await this.driverRepo.get(command.tenantId, command.driverId);
+    const driver = await this.driverRepo.get(
+      command.tenantId,
+      command.driverId
+    );
     if (!driver) {
       throw ErrorFactory.driverNotFound(command.driverId, command.tenantId);
     }
@@ -63,7 +74,10 @@ export class DriverManager {
     return updatedDriver;
   }
 
-  public async getDriver(tenantId: TenantId, driverId: DriverId): Promise<Driver> {
+  public async getDriver(
+    tenantId: TenantId,
+    driverId: DriverId
+  ): Promise<Driver> {
     const driver = await this.driverRepo.get(tenantId, driverId);
     if (!driver) {
       throw ErrorFactory.driverNotFound(driverId, tenantId);
@@ -71,112 +85,164 @@ export class DriverManager {
     return driver;
   }
 
-  public async setDriverOnline(tenantId: TenantId, driverId: DriverId): Promise<void> {
+  public async setDriverOnline(
+    tenantId: TenantId,
+    driverId: DriverId
+  ): Promise<void> {
     const driver = await this.getDriver(tenantId, driverId);
-    this.stateMachine.validateDriverTransition(driver.status, DriverStatus.ONLINE, {
-      currentLoad: driver.currentLoad,
-      capacity: driver.capacity
-    });
+    this.stateMachine.validateDriverTransition(
+      driver.status,
+      DriverStatus.ONLINE,
+      {
+        currentLoad: driver.currentLoad,
+        capacity: driver.capacity,
+      }
+    );
 
-    await this.driverRepo.setDriverStatus(tenantId, driverId, DriverStatus.ONLINE);
+    await this.driverRepo.setDriverStatus(
+      tenantId,
+      driverId,
+      DriverStatus.ONLINE
+    );
 
     this.eventBus.publish({
       eventId: this.idGen.generateEventId(),
-      eventName: 'driver.online',
+      eventName: "driver.online",
       timestamp: this.clock.now().toISOString(),
       tenantId,
       payload: {
         tenantId,
         driverId,
-        capacity: driver.capacity
+        capacity: driver.capacity,
       },
       governance: {
-        producer: 'PresenceEngine',
-        consumers: ['MatchingEngine', 'SocketServer'],
-        deliveryGuarantee: 'AT_LEAST_ONCE',
-        orderingScope: 'DRIVER',
-        partitionKey: 'driverId',
-        idempotencyRequirements: 'Deduplicate by state transition timestamp to skip late-arriving offline states.',
-        version: '1.0.0'
-      }
+        producer: "PresenceEngine",
+        consumers: ["MatchingEngine", "SocketServer"],
+        deliveryGuarantee: "AT_LEAST_ONCE",
+        orderingScope: "DRIVER",
+        partitionKey: "driverId",
+        idempotencyRequirements:
+          "Deduplicate by state transition timestamp to skip late-arriving offline states.",
+        version: "1.0.0",
+      },
     });
   }
 
-  public async setDriverOffline(tenantId: TenantId, driverId: DriverId, reason: 'MANUAL_DISCONNECT' | 'HEARTBEAT_TIMEOUT' = 'MANUAL_DISCONNECT'): Promise<void> {
+  public async setDriverOffline(
+    tenantId: TenantId,
+    driverId: DriverId,
+    reason: "MANUAL_DISCONNECT" | "HEARTBEAT_TIMEOUT" = "MANUAL_DISCONNECT"
+  ): Promise<void> {
     const driver = await this.getDriver(tenantId, driverId);
-    this.stateMachine.validateDriverTransition(driver.status, DriverStatus.OFFLINE, {
-      currentLoad: driver.currentLoad,
-      capacity: driver.capacity
-    });
+    this.stateMachine.validateDriverTransition(
+      driver.status,
+      DriverStatus.OFFLINE,
+      {
+        currentLoad: driver.currentLoad,
+        capacity: driver.capacity,
+      }
+    );
 
-    await this.driverRepo.setDriverStatus(tenantId, driverId, DriverStatus.OFFLINE);
+    await this.driverRepo.setDriverStatus(
+      tenantId,
+      driverId,
+      DriverStatus.OFFLINE
+    );
 
     this.eventBus.publish({
       eventId: this.idGen.generateEventId(),
-      eventName: 'driver.offline',
+      eventName: "driver.offline",
       timestamp: this.clock.now().toISOString(),
       tenantId,
       payload: {
         tenantId,
         driverId,
-        reason
+        reason,
       },
       governance: {
-        producer: 'PresenceEngine',
-        consumers: ['DispatchEngine', 'SocketServer'],
-        deliveryGuarantee: 'AT_LEAST_ONCE',
-        orderingScope: 'DRIVER',
-        partitionKey: 'driverId',
-        idempotencyRequirements: 'Process in sequence, cancel driver reservations upon receipt.',
-        version: '1.0.0'
-      }
+        producer: "PresenceEngine",
+        consumers: ["DispatchEngine", "SocketServer"],
+        deliveryGuarantee: "AT_LEAST_ONCE",
+        orderingScope: "DRIVER",
+        partitionKey: "driverId",
+        idempotencyRequirements:
+          "Process in sequence, cancel driver reservations upon receipt.",
+        version: "1.0.0",
+      },
     });
   }
 
-  public async setDriverPaused(tenantId: TenantId, driverId: DriverId): Promise<void> {
+  public async setDriverPaused(
+    tenantId: TenantId,
+    driverId: DriverId
+  ): Promise<void> {
     const driver = await this.getDriver(tenantId, driverId);
-    this.stateMachine.validateDriverTransition(driver.status, DriverStatus.PAUSED, {
-      currentLoad: driver.currentLoad,
-      capacity: driver.capacity
-    });
+    this.stateMachine.validateDriverTransition(
+      driver.status,
+      DriverStatus.PAUSED,
+      {
+        currentLoad: driver.currentLoad,
+        capacity: driver.capacity,
+      }
+    );
 
-    await this.driverRepo.setDriverStatus(tenantId, driverId, DriverStatus.PAUSED);
+    await this.driverRepo.setDriverStatus(
+      tenantId,
+      driverId,
+      DriverStatus.PAUSED
+    );
 
     this.eventBus.publish({
       eventId: this.idGen.generateEventId(),
-      eventName: 'driver.paused',
+      eventName: "driver.paused",
       timestamp: this.clock.now().toISOString(),
       tenantId,
       payload: {
         tenantId,
-        driverId
+        driverId,
       },
       governance: {
-        producer: 'PresenceEngine',
-        consumers: ['MatchingEngine'],
-        deliveryGuarantee: 'AT_LEAST_ONCE',
-        orderingScope: 'DRIVER',
-        partitionKey: 'driverId',
-        idempotencyRequirements: 'Process sequentially, pause dispatch updates.',
-        version: '1.0.0'
-      }
+        producer: "PresenceEngine",
+        consumers: ["MatchingEngine"],
+        deliveryGuarantee: "AT_LEAST_ONCE",
+        orderingScope: "DRIVER",
+        partitionKey: "driverId",
+        idempotencyRequirements:
+          "Process sequentially, pause dispatch updates.",
+        version: "1.0.0",
+      },
     });
   }
 
-  public async setDriverStale(tenantId: TenantId, driverId: DriverId): Promise<void> {
+  public async setDriverStale(
+    tenantId: TenantId,
+    driverId: DriverId
+  ): Promise<void> {
     const driver = await this.getDriver(tenantId, driverId);
-    this.stateMachine.validateDriverTransition(driver.status, DriverStatus.STALE, {
-      currentLoad: driver.currentLoad,
-      capacity: driver.capacity
-    });
+    this.stateMachine.validateDriverTransition(
+      driver.status,
+      DriverStatus.STALE,
+      {
+        currentLoad: driver.currentLoad,
+        capacity: driver.capacity,
+      }
+    );
 
-    await this.driverRepo.setDriverStatus(tenantId, driverId, DriverStatus.STALE);
+    await this.driverRepo.setDriverStatus(
+      tenantId,
+      driverId,
+      DriverStatus.STALE
+    );
   }
 
-  public async bindDriver(tenantId: TenantId, driverId: DriverId): Promise<void> {
+  public async bindDriver(
+    tenantId: TenantId,
+    driverId: DriverId
+  ): Promise<void> {
     const driver = await this.getDriver(tenantId, driverId);
     const newLoad = driver.currentLoad + 1;
-    const newStatus = newLoad >= driver.capacity ? DriverStatus.BUSY : driver.status;
+    const newStatus =
+      newLoad >= driver.capacity ? DriverStatus.BUSY : driver.status;
 
     const updated = new DriverEntity(
       driver.tenantId,
@@ -191,10 +257,16 @@ export class DriverManager {
     await this.driverRepo.save(updated);
   }
 
-  public async unbindDriver(tenantId: TenantId, driverId: DriverId): Promise<void> {
+  public async unbindDriver(
+    tenantId: TenantId,
+    driverId: DriverId
+  ): Promise<void> {
     const driver = await this.getDriver(tenantId, driverId);
     const newLoad = Math.max(0, driver.currentLoad - 1);
-    const newStatus = driver.status === DriverStatus.BUSY && newLoad < driver.capacity ? DriverStatus.ONLINE : driver.status;
+    const newStatus =
+      driver.status === DriverStatus.BUSY && newLoad < driver.capacity
+        ? DriverStatus.ONLINE
+        : driver.status;
 
     const updated = new DriverEntity(
       driver.tenantId,

@@ -1,4 +1,4 @@
-import { ErrorCode } from '@motus/types';
+import { ErrorCode } from "@motus/types";
 
 export const HTTP_CODE_MAP: Record<ErrorCode, number> = {
   [ErrorCode.MOTUS_DRIVER_NOT_FOUND]: 404,
@@ -10,7 +10,7 @@ export const HTTP_CODE_MAP: Record<ErrorCode, number> = {
   [ErrorCode.MOTUS_LOCK_ACQUISITION_FAILED]: 409,
   [ErrorCode.MOTUS_INVALID_ARGUMENT]: 400,
   [ErrorCode.MOTUS_UNAUTHORIZED]: 401,
-  [ErrorCode.MOTUS_INTERNAL_ERROR]: 500
+  [ErrorCode.MOTUS_INTERNAL_ERROR]: 500,
 };
 
 export const WEBSOCKET_CODE_MAP: Record<ErrorCode, number> = {
@@ -23,5 +23,5 @@ export const WEBSOCKET_CODE_MAP: Record<ErrorCode, number> = {
   [ErrorCode.MOTUS_LOCK_ACQUISITION_FAILED]: 4423,
   [ErrorCode.MOTUS_INVALID_ARGUMENT]: 4401,
   [ErrorCode.MOTUS_UNAUTHORIZED]: 4403,
-  [ErrorCode.MOTUS_INTERNAL_ERROR]: 5000
+  [ErrorCode.MOTUS_INTERNAL_ERROR]: 5000,
 };

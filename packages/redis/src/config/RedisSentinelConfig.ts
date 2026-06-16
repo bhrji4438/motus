@@ -28,7 +28,7 @@ export interface RedisSentinelConfig {
 
 /** Default Sentinel config. */
 export const DEFAULT_SENTINEL_CONFIG: RedisSentinelConfig = {
-  sentinels: [{ host: 'localhost', port: 26379 }],
-  name: 'mymaster',
+  sentinels: [{ host: "localhost", port: 26379 }],
+  name: "mymaster",
   failoverDetectionTimeoutMs: 10000,
 };

@@ -1,4 +1,9 @@
-import { INotificationProvider, NotificationPayload, NotificationResult, ProviderCapabilities } from '@/providers/INotificationProvider.js';
+import {
+  INotificationProvider,
+  NotificationPayload,
+  NotificationResult,
+  ProviderCapabilities,
+} from "@/providers/INotificationProvider.js";
 
 export interface OneSignalConfig {
   appId?: string;
@@ -7,11 +12,11 @@ export interface OneSignalConfig {
 }
 
 export class OneSignalProvider implements INotificationProvider {
-  public readonly name = 'onesignal';
+  public readonly name = "onesignal";
   public readonly capabilities: ProviderCapabilities = {
     supportsBulk: true,
     supportsTopics: true,
-    platforms: ['ios', 'android', 'web'],
+    platforms: ["ios", "android", "web"],
   };
 
   private appId: string | undefined;
@@ -42,7 +47,7 @@ export class OneSignalProvider implements INotificationProvider {
 
     try {
       if (!this.appId || !this.apiKey) {
-        throw new Error('OneSignal appId or apiKey is missing');
+        throw new Error("OneSignal appId or apiKey is missing");
       }
 
       // OneSignal POST /notifications payload mapping
@@ -56,26 +61,30 @@ export class OneSignalProvider implements INotificationProvider {
       if (payload.topic) {
         // Topic corresponds to tags in OneSignal
         bodyPayload.filters = [
-          { field: 'tag', key: 'topic', relation: '=', value: payload.topic },
+          { field: "tag", key: "topic", relation: "=", value: payload.topic },
         ];
       } else if (payload.targetToken) {
         bodyPayload.include_subscription_ids = [payload.targetToken];
       } else {
-        throw new Error('OneSignal requires targetToken or topic tag for targeting');
+        throw new Error(
+          "OneSignal requires targetToken or topic tag for targeting"
+        );
       }
 
-      const res = await fetch('https://onesignal.com/api/v1/notifications', {
-        method: 'POST',
+      const res = await fetch("https://onesignal.com/api/v1/notifications", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json; charset=utf-8',
-          'Authorization': `Basic ${this.apiKey}`,
+          "Content-Type": "application/json; charset=utf-8",
+          Authorization: `Basic ${this.apiKey}`,
         },
         body: JSON.stringify(bodyPayload),
       });
 
       if (!res.ok) {
         const errText = await res.text();
-        throw new Error(`OneSignal REST API failed with status ${res.status}: ${errText}`);
+        throw new Error(
+          `OneSignal REST API failed with status ${res.status}: ${errText}`
+        );
       }
 
       const resJson = (await res.json()) as any;
@@ -99,9 +108,12 @@ export class OneSignalProvider implements INotificationProvider {
     }
   }
 
-  public async checkHealth(): Promise<{ status: 'UP' | 'DOWN'; details?: Record<string, any> }> {
+  public async checkHealth(): Promise<{
+    status: "UP" | "DOWN";
+    details?: Record<string, any>;
+  }> {
     return {
-      status: this.useMock || (this.appId && this.apiKey) ? 'UP' : 'DOWN',
+      status: this.useMock || (this.appId && this.apiKey) ? "UP" : "DOWN",
       details: {
         mockMode: this.useMock,
       },

@@ -1,5 +1,5 @@
-import { GenericContainer, type StartedTestContainer } from 'testcontainers';
-import { Redis } from 'ioredis';
+import { GenericContainer, type StartedTestContainer } from "testcontainers";
+import { Redis } from "ioredis";
 
 export interface SharedRedisTestContext {
   container: StartedTestContainer;
@@ -13,9 +13,9 @@ export interface SharedRedisTestContext {
  * Spins up a real Redis container using testcontainers for integration/E2E testing.
  */
 export async function startSharedRedisContainer(): Promise<SharedRedisTestContext> {
-  const container = await new GenericContainer('redis:7.2-alpine')
+  const container = await new GenericContainer("redis:7.2-alpine")
     .withExposedPorts(6379)
-    .withCommand(['redis-server', '--save', '', '--appendonly', 'no'])
+    .withCommand(["redis-server", "--save", "", "--appendonly", "no"])
     .start();
 
   const host = container.getHost();

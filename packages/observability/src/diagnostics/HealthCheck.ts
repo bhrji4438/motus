@@ -1,6 +1,6 @@
-import os from 'os';
+import os from "os";
 
-export type HealthStatus = 'UP' | 'DOWN' | 'DEGRADED';
+export type HealthStatus = "UP" | "DOWN" | "DEGRADED";
 
 export interface HealthCheckResult {
   status: HealthStatus;
@@ -8,7 +8,9 @@ export interface HealthCheckResult {
   timestamp: string;
 }
 
-export type HealthCheckFn = () => Promise<HealthCheckResult> | HealthCheckResult;
+export type HealthCheckFn = () =>
+  | Promise<HealthCheckResult>
+  | HealthCheckResult;
 
 export class HealthCheckRegistry {
   private checks = new Map<string, HealthCheckFn>();
@@ -60,25 +62,28 @@ export class HealthCheckRegistry {
     timestamp: string;
   }> {
     const results: Record<string, HealthCheckResult> = {};
-    let aggregatedStatus: HealthStatus = 'UP';
+    let aggregatedStatus: HealthStatus = "UP";
 
     for (const [name, check] of this.checks.entries()) {
       try {
         const checkResult = await check();
         results[name] = checkResult;
 
-        if (checkResult.status === 'DOWN') {
-          aggregatedStatus = 'DOWN';
-        } else if (checkResult.status === 'DEGRADED' && aggregatedStatus !== 'DOWN') {
-          aggregatedStatus = 'DEGRADED';
+        if (checkResult.status === "DOWN") {
+          aggregatedStatus = "DOWN";
+        } else if (
+          checkResult.status === "DEGRADED" &&
+          aggregatedStatus !== "DOWN"
+        ) {
+          aggregatedStatus = "DEGRADED";
         }
       } catch (error: any) {
         results[name] = {
-          status: 'DOWN',
+          status: "DOWN",
           details: { error: error.message || String(error) },
           timestamp: new Date().toISOString(),
         };
-        aggregatedStatus = 'DOWN';
+        aggregatedStatus = "DOWN";
       }
     }
 

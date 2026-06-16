@@ -1,12 +1,12 @@
-import { MatchingStrategy } from '@/domain/enums.js';
+import { MatchingStrategy } from "@/domain/enums.js";
 import {
   TenantScoped,
   DriverId,
   SessionId,
   Coordinates,
-  VehicleType
-} from '@/domain/value-objects.js';
-import { IdempotentCommand } from '@/sdk/idempotency.js';
+  VehicleType,
+} from "@/domain/value-objects.js";
+import { IdempotentCommand } from "@/sdk/idempotency.js";
 
 /**
  * Registers a new tenant partition workspace with specific matching rules.

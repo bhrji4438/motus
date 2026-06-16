@@ -1,5 +1,10 @@
-import apn from '@parse/node-apn';
-import { INotificationProvider, NotificationPayload, NotificationResult, ProviderCapabilities } from '@/providers/INotificationProvider.js';
+import apn from "@parse/node-apn";
+import {
+  INotificationProvider,
+  NotificationPayload,
+  NotificationResult,
+  ProviderCapabilities,
+} from "@/providers/INotificationProvider.js";
 
 export interface ApnsConfig {
   key?: string; // JWT Private key content
@@ -11,11 +16,11 @@ export interface ApnsConfig {
 }
 
 export class ApnsProvider implements INotificationProvider {
-  public readonly name = 'apns';
+  public readonly name = "apns";
   public readonly capabilities: ProviderCapabilities = {
     supportsBulk: false, // APNS native client sends individual messages
     supportsTopics: false,
-    platforms: ['ios'],
+    platforms: ["ios"],
   };
 
   private provider?: apn.Provider;
@@ -26,11 +31,17 @@ export class ApnsProvider implements INotificationProvider {
     this.useMock = config.useMock !== false;
     this.bundleId = config.bundleId;
 
-    if (!this.useMock && config.key && config.keyId && config.teamId && config.bundleId) {
+    if (
+      !this.useMock &&
+      config.key &&
+      config.keyId &&
+      config.teamId &&
+      config.bundleId
+    ) {
       try {
         this.provider = new apn.Provider({
           token: {
-            key: config.key.replace(/\\n/g, '\n'),
+            key: config.key.replace(/\\n/g, "\n"),
             keyId: config.keyId,
             teamId: config.teamId,
           },
@@ -56,20 +67,21 @@ export class ApnsProvider implements INotificationProvider {
     }
 
     try {
-      if (!this.provider) throw new Error('APNS provider is not initialized');
-      if (!payload.targetToken) throw new Error('APNS requires targetToken to be specified');
+      if (!this.provider) throw new Error("APNS provider is not initialized");
+      if (!payload.targetToken)
+        throw new Error("APNS requires targetToken to be specified");
 
       const note = new apn.Notification();
       note.expiry = Math.floor(Date.now() / 1000) + (payload.ttl || 3600);
       note.badge = 1;
-      note.sound = 'ping.aiff';
+      note.sound = "ping.aiff";
       note.alert = {
         title: payload.title,
         body: payload.body,
       };
       note.payload = payload.data || {};
-      note.topic = this.bundleId || '';
-      note.priority = payload.priority === 'high' ? 10 : 5;
+      note.topic = this.bundleId || "";
+      note.priority = payload.priority === "high" ? 10 : 5;
 
       const response = await this.provider.send(note, payload.targetToken);
 
@@ -78,7 +90,7 @@ export class ApnsProvider implements INotificationProvider {
         return {
           success: false,
           providerName: this.name,
-          error: failInfo.response?.reason || 'APNS sending failed',
+          error: failInfo.response?.reason || "APNS sending failed",
           timestamp,
         };
       }
@@ -99,9 +111,12 @@ export class ApnsProvider implements INotificationProvider {
     }
   }
 
-  public async checkHealth(): Promise<{ status: 'UP' | 'DOWN'; details?: Record<string, any> }> {
+  public async checkHealth(): Promise<{
+    status: "UP" | "DOWN";
+    details?: Record<string, any>;
+  }> {
     return {
-      status: this.useMock || this.provider ? 'UP' : 'DOWN',
+      status: this.useMock || this.provider ? "UP" : "DOWN",
       details: {
         mockMode: this.useMock,
       },

@@ -1,11 +1,23 @@
-import { SpanExporter, SimpleSpanProcessor, BatchSpanProcessor, SpanProcessor } from '@opentelemetry/sdk-trace-base';
-import { ConsoleSpanExporter, InMemorySpanExporter } from '@opentelemetry/sdk-trace-node';
-import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
-import { MetricReader, PeriodicExportingMetricReader, ConsoleMetricExporter } from '@opentelemetry/sdk-metrics';
+import {
+  SpanExporter,
+  SimpleSpanProcessor,
+  BatchSpanProcessor,
+  SpanProcessor,
+} from "@opentelemetry/sdk-trace-base";
+import {
+  ConsoleSpanExporter,
+  InMemorySpanExporter,
+} from "@opentelemetry/sdk-trace-node";
+import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-proto";
+import {
+  MetricReader,
+  PeriodicExportingMetricReader,
+  ConsoleMetricExporter,
+} from "@opentelemetry/sdk-metrics";
 
 export interface ExporterConfig {
-  tracesExporter?: 'console' | 'memory' | 'otlp' | 'noop';
-  metricsExporter?: 'console' | 'prometheus' | 'noop';
+  tracesExporter?: "console" | "memory" | "otlp" | "noop";
+  metricsExporter?: "console" | "prometheus" | "noop";
   otlpEndpoint?: string;
 }
 
@@ -29,22 +41,22 @@ export class ExporterFactory {
     let exporter: SpanExporter;
 
     switch (config.tracesExporter) {
-      case 'memory':
+      case "memory":
         exporter = this.getInMemorySpanExporter();
         break;
-      case 'otlp':
+      case "otlp":
         exporter = new OTLPTraceExporter({
-          url: config.otlpEndpoint || 'http://localhost:4318/v1/traces',
+          url: config.otlpEndpoint || "http://localhost:4318/v1/traces",
         });
         break;
-      case 'console':
+      case "console":
       default:
         exporter = new ConsoleSpanExporter();
         break;
     }
 
     // Use SimpleSpanProcessor for dev/testing, BatchSpanProcessor for production/OTLP
-    if (config.tracesExporter === 'otlp') {
+    if (config.tracesExporter === "otlp") {
       return new BatchSpanProcessor(exporter);
     }
     return new SimpleSpanProcessor(exporter);
@@ -53,14 +65,16 @@ export class ExporterFactory {
   /**
    * Create an OpenTelemetry MetricReader based on the configuration.
    */
-  public static createMetricReader(config: ExporterConfig): MetricReader | undefined {
+  public static createMetricReader(
+    config: ExporterConfig
+  ): MetricReader | undefined {
     switch (config.metricsExporter) {
-      case 'console':
+      case "console":
         return new PeriodicExportingMetricReader({
           exporter: new ConsoleMetricExporter(),
           exportIntervalMillis: 60000,
         });
-      case 'noop':
+      case "noop":
         return undefined;
       default:
         // By default, we let prom-client registry serialize metrics for Prometheus pulls,

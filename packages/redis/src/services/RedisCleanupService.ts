@@ -1,19 +1,26 @@
-import type { TenantId } from '@motus/types';
-import type { RedisClient } from '@/client/RedisClientManager.js';
-import { KeyFactory } from '@/keys/KeyFactory.js';
-import { RedisLockManager, type LockHandle } from '@/repositories/RedisLockManager.js';
-import { RedisGeoRepository } from '@/repositories/RedisGeoRepository.js';
-import { RedisPresenceRepository } from '@/repositories/RedisPresenceRepository.js';
-import type { RedisCleanupConfig, RedisLockConfig, RedisRetentionConfig } from '@/config/index.js';
+import type { TenantId } from "@motus/types";
+import type { RedisClient } from "@/client/RedisClientManager.js";
+import { KeyFactory } from "@/keys/KeyFactory.js";
+import {
+  RedisLockManager,
+  type LockHandle,
+} from "@/repositories/RedisLockManager.js";
+import { RedisGeoRepository } from "@/repositories/RedisGeoRepository.js";
+import { RedisPresenceRepository } from "@/repositories/RedisPresenceRepository.js";
+import type {
+  RedisCleanupConfig,
+  RedisLockConfig,
+  RedisRetentionConfig,
+} from "@/config/index.js";
 import {
   DEFAULT_CLEANUP_CONFIG,
   DEFAULT_LOCK_CONFIG,
   DEFAULT_RETENTION_CONFIG,
-} from '@/config/index.js';
+} from "@/config/index.js";
 import {
   resolveObservability,
   type RedisObservabilityDeps,
-} from '@/observability/RedisObservability.js';
+} from "@/observability/RedisObservability.js";
 
 /**
  * Cleanup service running five periodic background workers:
@@ -51,35 +58,37 @@ export class RedisCleanupService {
   /** Starts all enabled cleanup workers. */
   start(): void {
     if (!this.cleanup.enabled) {
-      this.obs.logger.info('RedisCleanupService: disabled by config, no workers started');
+      this.obs.logger.info(
+        "RedisCleanupService: disabled by config, no workers started"
+      );
       return;
     }
 
     this.scheduleWorker(
-      'SessionExpiryPruner',
+      "SessionExpiryPruner",
       this.cleanup.sessionExpiryIntervalSeconds * 1000,
       () => this.runSessionExpiryPruner()
     );
 
     this.scheduleWorker(
-      'TelemetryRetention',
+      "TelemetryRetention",
       this.cleanup.telemetryRetentionIntervalSeconds * 1000,
       () => this.runTelemetryRetention()
     );
 
     this.scheduleWorker(
-      'EventRetention',
+      "EventRetention",
       this.cleanup.eventRetentionIntervalSeconds * 1000,
       () => this.runEventRetention()
     );
 
     this.scheduleWorker(
-      'LockJanitor',
+      "LockJanitor",
       this.cleanup.lockJanitorIntervalSeconds * 1000,
       () => this.runLockJanitor()
     );
 
-    this.obs.logger.info('RedisCleanupService: all workers started');
+    this.obs.logger.info("RedisCleanupService: all workers started");
   }
 
   /** Starts presence cleanup for a specific tenant. Call once per tenant. */
@@ -98,26 +107,30 @@ export class RedisCleanupService {
       clearInterval(id);
     }
     this.intervalIds.length = 0;
-    this.obs.logger.info('RedisCleanupService: all workers stopped');
+    this.obs.logger.info("RedisCleanupService: all workers stopped");
   }
 
   // ─── Worker 1: Session Expiry Pruner ─────────────────────────────────────
 
   async runSessionExpiryPruner(): Promise<void> {
-    const lock = await this.acquireWorkerLock(KeyFactory.cleanupSessionExpiryLock());
+    const lock = await this.acquireWorkerLock(
+      KeyFactory.cleanupSessionExpiryLock()
+    );
     if (!lock) return;
 
     try {
       const now = Date.now();
-      const members = await (this.client as any).motusExpireSessionScan(
+      const members = (await (this.client as any).motusExpireSessionScan(
         KeyFactory.sessionExpiryZset(),
         String(now),
         String(this.cleanup.cleanupBatchSize)
-      ) as string[];
+      )) as string[];
 
       if (!members || members.length === 0) return;
 
-      this.obs.logger.info(`SessionExpiryPruner: pruning ${members.length} expired sessions`);
+      this.obs.logger.info(
+        `SessionExpiryPruner: pruning ${members.length} expired sessions`
+      );
 
       for (const member of members) {
         const parsed = KeyFactory.parseExpiryMember(member);
@@ -133,12 +146,19 @@ export class RedisCleanupService {
           );
 
           // Remove from global expiry ZSET (separate single-key operation)
-          await (this.client as any).zrem(KeyFactory.sessionExpiryZset(), member);
+          await (this.client as any).zrem(
+            KeyFactory.sessionExpiryZset(),
+            member
+          );
 
-          this.obs.metrics.recordCleanupPruned('session', 1);
+          this.obs.metrics.recordCleanupPruned("session", 1);
           this.obs.logger.debug(`Pruned session`, { tenantId, sessionId });
         } catch (err) {
-          this.obs.logger.error(`Failed to prune session`, { tenantId, sessionId, error: err });
+          this.obs.logger.error(`Failed to prune session`, {
+            tenantId,
+            sessionId,
+            error: err,
+          });
         }
       }
     } finally {
@@ -149,14 +169,21 @@ export class RedisCleanupService {
   // ─── Worker 2: Telemetry Retention ───────────────────────────────────────
 
   async runTelemetryRetention(): Promise<void> {
-    const lock = await this.acquireWorkerLock(KeyFactory.cleanupTelemetryLock());
+    const lock = await this.acquireWorkerLock(
+      KeyFactory.cleanupTelemetryLock()
+    );
     if (!lock) return;
 
     try {
       // Get active sessions from expiry ZSET (all members, not just expired)
-      const members = await (this.client as any).zrangebyscore(
-        KeyFactory.sessionExpiryZset(), '-inf', '+inf', 'LIMIT', 0, this.cleanup.cleanupBatchSize
-      ) as string[];
+      const members = (await (this.client as any).zrangebyscore(
+        KeyFactory.sessionExpiryZset(),
+        "-inf",
+        "+inf",
+        "LIMIT",
+        0,
+        this.cleanup.cleanupBatchSize
+      )) as string[];
 
       for (const member of members) {
         const parsed = KeyFactory.parseExpiryMember(member);
@@ -165,14 +192,22 @@ export class RedisCleanupService {
         try {
           await (this.client as any).xtrim(
             KeyFactory.sessionTelemetryStream(tenantId, sessionId),
-            'MAXLEN', '~', this.retention.telemetryMaxPoints
+            "MAXLEN",
+            "~",
+            this.retention.telemetryMaxPoints
           );
         } catch (err) {
-          this.obs.logger.warn(`Telemetry trim failed`, { tenantId, sessionId, error: err });
+          this.obs.logger.warn(`Telemetry trim failed`, {
+            tenantId,
+            sessionId,
+            error: err,
+          });
         }
       }
 
-      this.obs.logger.debug(`TelemetryRetention: trimmed ${members.length} sessions`);
+      this.obs.logger.debug(
+        `TelemetryRetention: trimmed ${members.length} sessions`
+      );
     } finally {
       await this.lockManager.releaseLockHandle(lock);
     }
@@ -185,9 +220,14 @@ export class RedisCleanupService {
     if (!lock) return;
 
     try {
-      const members = await (this.client as any).zrangebyscore(
-        KeyFactory.sessionExpiryZset(), '-inf', '+inf', 'LIMIT', 0, this.cleanup.cleanupBatchSize
-      ) as string[];
+      const members = (await (this.client as any).zrangebyscore(
+        KeyFactory.sessionExpiryZset(),
+        "-inf",
+        "+inf",
+        "LIMIT",
+        0,
+        this.cleanup.cleanupBatchSize
+      )) as string[];
 
       for (const member of members) {
         const parsed = KeyFactory.parseExpiryMember(member);
@@ -196,14 +236,22 @@ export class RedisCleanupService {
         try {
           await (this.client as any).xtrim(
             KeyFactory.sessionEventStream(tenantId, sessionId),
-            'MAXLEN', '~', this.retention.eventMaxEntries
+            "MAXLEN",
+            "~",
+            this.retention.eventMaxEntries
           );
         } catch (err) {
-          this.obs.logger.warn(`Event trim failed`, { tenantId, sessionId, error: err });
+          this.obs.logger.warn(`Event trim failed`, {
+            tenantId,
+            sessionId,
+            error: err,
+          });
         }
       }
 
-      this.obs.logger.debug(`EventRetention: trimmed ${members.length} sessions`);
+      this.obs.logger.debug(
+        `EventRetention: trimmed ${members.length} sessions`
+      );
     } finally {
       await this.lockManager.releaseLockHandle(lock);
     }
@@ -212,29 +260,44 @@ export class RedisCleanupService {
   // ─── Worker 4: Presence Cleanup ──────────────────────────────────────────
 
   async runPresenceCleanup(tenantId: TenantId): Promise<void> {
-    const lock = await this.acquireWorkerLock(KeyFactory.cleanupPresenceLock(tenantId));
+    const lock = await this.acquireWorkerLock(
+      KeyFactory.cleanupPresenceLock(tenantId)
+    );
     if (!lock) return;
 
     try {
       const staleThresholdMs = this.cleanup.staleDriverThresholdSeconds * 1000;
       const staleDrivers = await this.presenceRepo.getStaleDrivers(
-        tenantId, staleThresholdMs, this.cleanup.cleanupBatchSize
+        tenantId,
+        staleThresholdMs,
+        this.cleanup.cleanupBatchSize
       );
 
       if (staleDrivers.length === 0) return;
 
-      this.obs.logger.info(`PresenceCleanup: removing ${staleDrivers.length} stale drivers`, { tenantId });
+      this.obs.logger.info(
+        `PresenceCleanup: removing ${staleDrivers.length} stale drivers`,
+        { tenantId }
+      );
 
       for (const { driverId, lastHeartbeatMs } of staleDrivers) {
-        const staleAgeSeconds = Math.round((Date.now() - lastHeartbeatMs) / 1000);
+        const staleAgeSeconds = Math.round(
+          (Date.now() - lastHeartbeatMs) / 1000
+        );
         try {
           await this.presenceRepo.remove(tenantId, driverId);
           await this.geoRepo.remove(tenantId, driverId);
           this.obs.logger.debug(`Removed stale driver from presence + geo`, {
-            tenantId, driverId, staleAgeSeconds,
+            tenantId,
+            driverId,
+            staleAgeSeconds,
           });
         } catch (err) {
-          this.obs.logger.error(`Failed to remove stale driver`, { tenantId, driverId, error: err });
+          this.obs.logger.error(`Failed to remove stale driver`, {
+            tenantId,
+            driverId,
+            error: err,
+          });
         }
       }
     } finally {
@@ -247,28 +310,37 @@ export class RedisCleanupService {
   async runLockJanitor(): Promise<void> {
     // No lock needed — this is an idempotent scan
     try {
-      let cursor = '0';
+      let cursor = "0";
       let persistentCount = 0;
 
       do {
-        const [nextCursor, keys] = await (this.client as any).scan(
-          cursor, 'MATCH', 'lock:*', 'COUNT', 100
-        ) as [string, string[]];
+        const [nextCursor, keys] = (await (this.client as any).scan(
+          cursor,
+          "MATCH",
+          "lock:*",
+          "COUNT",
+          100
+        )) as [string, string[]];
         cursor = nextCursor;
 
         for (const key of keys) {
-          const ttl = await (this.client as any).ttl(key) as number;
+          const ttl = (await (this.client as any).ttl(key)) as number;
           if (ttl === -1) {
             // Persistent key — this should never happen for lock keys
-            this.obs.logger.warn(`LockJanitor: found persistent lock key without TTL`, { key });
+            this.obs.logger.warn(
+              `LockJanitor: found persistent lock key without TTL`,
+              { key }
+            );
             await (this.client as any).del(key);
             persistentCount++;
           }
         }
-      } while (cursor !== '0');
+      } while (cursor !== "0");
 
       if (persistentCount > 0) {
-        this.obs.logger.warn(`LockJanitor: removed ${persistentCount} persistent lock keys`);
+        this.obs.logger.warn(
+          `LockJanitor: removed ${persistentCount} persistent lock keys`
+        );
       } else {
         this.obs.logger.debug(`LockJanitor: no persistent lock keys found`);
       }
@@ -282,15 +354,24 @@ export class RedisCleanupService {
   private async acquireWorkerLock(lockKey: string): Promise<LockHandle | null> {
     const handle = await this.lockManager.acquireLockWithHandle(lockKey);
     if (!handle) {
-      this.obs.logger.debug(`Worker lock not acquired (another node running)`, { lockKey });
+      this.obs.logger.debug(`Worker lock not acquired (another node running)`, {
+        lockKey,
+      });
     }
     return handle;
   }
 
-  private scheduleWorker(name: string, intervalMs: number, fn: () => Promise<void>): void {
+  private scheduleWorker(
+    name: string,
+    intervalMs: number,
+    fn: () => Promise<void>
+  ): void {
     const id = setInterval(() => {
       fn().catch((err) => {
-        this.obs.logger.error(`Cleanup worker "${name}" threw an uncaught error`, { error: err });
+        this.obs.logger.error(
+          `Cleanup worker "${name}" threw an uncaught error`,
+          { error: err }
+        );
       });
     }, intervalMs);
     this.intervalIds.push(id);

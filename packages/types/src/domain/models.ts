@@ -1,4 +1,9 @@
-import { DriverStatus, SessionState, MatchingStrategy, DispatchWaveStatus } from '@/domain/enums.js';
+import {
+  DriverStatus,
+  SessionState,
+  MatchingStrategy,
+  DispatchWaveStatus,
+} from "@/domain/enums.js";
 import {
   TenantId,
   DriverId,
@@ -9,8 +14,8 @@ import {
   Distance,
   Duration,
   ETA,
-  TenantScoped
-} from '@/domain/value-objects.js';
+  TenantScoped,
+} from "@/domain/value-objects.js";
 
 /**
  * An enterprise operating zone defining operating boundaries.
@@ -56,7 +61,7 @@ export interface MatchingConfiguration {
  * Settings defining how wave assignment notifications are broadcast.
  */
 export interface FanoutConfiguration {
-  readonly mode: 'PARALLEL' | 'SERIAL';
+  readonly mode: "PARALLEL" | "SERIAL";
   readonly intervalSeconds: number;
 }
 
@@ -119,7 +124,7 @@ export interface SessionEvent {
 export interface Assignment {
   readonly driverId: DriverId;
   readonly sessionId: SessionId;
-  readonly status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED';
+  readonly status: "PENDING" | "ACCEPTED" | "REJECTED" | "EXPIRED";
   readonly lockAcquired: boolean;
 }
 

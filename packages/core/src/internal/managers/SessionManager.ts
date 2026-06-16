@@ -7,13 +7,19 @@ import {
   CompleteSessionCommand,
   ReassignSessionCommand,
   SessionState,
-  Location
-} from '@motus/types';
-import { ISessionRepository, ILockManager, IEventBus, IClock, IIdGenerator } from '@/internal/interfaces/ports.js';
-import { SessionEntity } from '@/internal/entities/entities.js';
-import { ErrorFactory } from '@/internal/errors/ErrorFactory.js';
-import { StateMachineManager } from '@/internal/state/StateMachineManager.js';
-import { DriverManager } from '@/internal/managers/DriverManager.js';
+  Location,
+} from "@motus/types";
+import {
+  ISessionRepository,
+  ILockManager,
+  IEventBus,
+  IClock,
+  IIdGenerator,
+} from "@/internal/interfaces/ports.js";
+import { SessionEntity } from "@/internal/entities/entities.js";
+import { ErrorFactory } from "@/internal/errors/ErrorFactory.js";
+import { StateMachineManager } from "@/internal/state/StateMachineManager.js";
+import { DriverManager } from "@/internal/managers/DriverManager.js";
 
 export class SessionManager {
   private readonly stateMachine = new StateMachineManager();
@@ -28,7 +34,10 @@ export class SessionManager {
   ) {}
 
   public async createSession(command: CreateSessionCommand): Promise<Session> {
-    const existing = await this.sessionRepo.get(command.tenantId, command.sessionId);
+    const existing = await this.sessionRepo.get(
+      command.tenantId,
+      command.sessionId
+    );
     if (existing) {
       return existing; // Idempotency
     }
@@ -54,35 +63,42 @@ export class SessionManager {
 
     this.eventBus.publish({
       eventId: this.idGen.generateEventId(),
-      eventName: 'session.created',
+      eventName: "session.created",
       timestamp: nowStr,
       tenantId: command.tenantId,
       payload: {
         tenantId: command.tenantId,
         sessionId: command.sessionId,
         pickup: command.pickup,
-        destination: command.destination
+        destination: command.destination,
       },
       governance: {
-        producer: 'SessionService',
-        consumers: ['MatchingEngine', 'SocketServer'],
-        deliveryGuarantee: 'AT_LEAST_ONCE',
-        orderingScope: 'SESSION',
-        partitionKey: 'sessionId',
-        idempotencyRequirements: 'Deduplicate by sessionId, initialize session lifecycle context.',
-        version: '1.0.0'
-      }
+        producer: "SessionService",
+        consumers: ["MatchingEngine", "SocketServer"],
+        deliveryGuarantee: "AT_LEAST_ONCE",
+        orderingScope: "SESSION",
+        partitionKey: "sessionId",
+        idempotencyRequirements:
+          "Deduplicate by sessionId, initialize session lifecycle context.",
+        version: "1.0.0",
+      },
     });
 
     // Automatically transition to SEARCHING state to trigger matching
     return await this.startMatching(command.tenantId, command.sessionId);
   }
 
-  public async startMatching(tenantId: TenantId, sessionId: SessionId): Promise<Session> {
+  public async startMatching(
+    tenantId: TenantId,
+    sessionId: SessionId
+  ): Promise<Session> {
     const lockKey = `lock:session:${sessionId}`;
     const acquired = await this.lockMgr.acquireLock(lockKey, 10);
     if (!acquired) {
-      throw ErrorFactory.lockAcquisitionFailed(lockKey, 'Failed to lock session during transition to SEARCHING.');
+      throw ErrorFactory.lockAcquisitionFailed(
+        lockKey,
+        "Failed to lock session during transition to SEARCHING."
+      );
     }
 
     try {
@@ -91,7 +107,10 @@ export class SessionManager {
         throw ErrorFactory.sessionNotFound(sessionId, tenantId);
       }
 
-      this.stateMachine.validateSessionTransition(session.status, SessionState.SEARCHING);
+      this.stateMachine.validateSessionTransition(
+        session.status,
+        SessionState.SEARCHING
+      );
 
       const updated = new SessionEntity(
         session.tenantId,
@@ -110,22 +129,23 @@ export class SessionManager {
 
       this.eventBus.publish({
         eventId: this.idGen.generateEventId(),
-        eventName: 'session.searching',
+        eventName: "session.searching",
         timestamp: this.clock.now().toISOString(),
         tenantId,
         payload: {
           tenantId,
-          sessionId
+          sessionId,
         },
         governance: {
-          producer: 'DispatchEngine',
-          consumers: ['MatchingEngine', 'SocketServer'],
-          deliveryGuarantee: 'AT_LEAST_ONCE',
-          orderingScope: 'SESSION',
-          partitionKey: 'sessionId',
-          idempotencyRequirements: 'Avoid triggering multiple matching candidate searches concurrently.',
-          version: '1.0.0'
-        }
+          producer: "DispatchEngine",
+          consumers: ["MatchingEngine", "SocketServer"],
+          deliveryGuarantee: "AT_LEAST_ONCE",
+          orderingScope: "SESSION",
+          partitionKey: "sessionId",
+          idempotencyRequirements:
+            "Avoid triggering multiple matching candidate searches concurrently.",
+          version: "1.0.0",
+        },
       });
 
       return updated;
@@ -138,11 +158,17 @@ export class SessionManager {
     const lockKey = `lock:session:${command.sessionId}`;
     const acquired = await this.lockMgr.acquireLock(lockKey, 10);
     if (!acquired) {
-      throw ErrorFactory.lockAcquisitionFailed(lockKey, 'Failed to lock session for cancellation.');
+      throw ErrorFactory.lockAcquisitionFailed(
+        lockKey,
+        "Failed to lock session for cancellation."
+      );
     }
 
     try {
-      const session = await this.sessionRepo.get(command.tenantId, command.sessionId);
+      const session = await this.sessionRepo.get(
+        command.tenantId,
+        command.sessionId
+      );
       if (!session) {
         throw ErrorFactory.sessionNotFound(command.sessionId, command.tenantId);
       }
@@ -152,12 +178,18 @@ export class SessionManager {
         return session;
       }
 
-      this.stateMachine.validateSessionTransition(session.status, SessionState.CANCELLED);
+      this.stateMachine.validateSessionTransition(
+        session.status,
+        SessionState.CANCELLED
+      );
 
       if (session.assignedDriverId) {
         // Strict lock ordering hierarchy: Session lock is already acquired, now we can lock Driver if needed.
         // But since DriverManager handles its own saving, we invoke it:
-        await this.driverMgr.unbindDriver(command.tenantId, session.assignedDriverId);
+        await this.driverMgr.unbindDriver(
+          command.tenantId,
+          session.assignedDriverId
+        );
       }
 
       const updated = new SessionEntity(
@@ -177,7 +209,7 @@ export class SessionManager {
 
       const payload: any = {
         tenantId: command.tenantId,
-        sessionId: command.sessionId
+        sessionId: command.sessionId,
       };
       if (command.reason !== undefined && command.reason !== null) {
         payload.reason = command.reason;
@@ -185,19 +217,20 @@ export class SessionManager {
 
       this.eventBus.publish({
         eventId: this.idGen.generateEventId(),
-        eventName: 'session.cancelled',
+        eventName: "session.cancelled",
         timestamp: this.clock.now().toISOString(),
         tenantId: command.tenantId,
         payload,
         governance: {
-          producer: 'SessionService',
-          consumers: ['FanoutEngine', 'SocketServer'],
-          deliveryGuarantee: 'AT_LEAST_ONCE',
-          orderingScope: 'SESSION',
-          partitionKey: 'sessionId',
-          idempotencyRequirements: 'Deduplicate, release driver reservations, terminate outstanding offers.',
-          version: '1.0.0'
-        }
+          producer: "SessionService",
+          consumers: ["FanoutEngine", "SocketServer"],
+          deliveryGuarantee: "AT_LEAST_ONCE",
+          orderingScope: "SESSION",
+          partitionKey: "sessionId",
+          idempotencyRequirements:
+            "Deduplicate, release driver reservations, terminate outstanding offers.",
+          version: "1.0.0",
+        },
       });
 
       return updated;
@@ -206,15 +239,23 @@ export class SessionManager {
     }
   }
 
-  public async completeSession(command: CompleteSessionCommand): Promise<Session> {
+  public async completeSession(
+    command: CompleteSessionCommand
+  ): Promise<Session> {
     const lockKey = `lock:session:${command.sessionId}`;
     const acquired = await this.lockMgr.acquireLock(lockKey, 10);
     if (!acquired) {
-      throw ErrorFactory.lockAcquisitionFailed(lockKey, 'Failed to lock session for completion.');
+      throw ErrorFactory.lockAcquisitionFailed(
+        lockKey,
+        "Failed to lock session for completion."
+      );
     }
 
     try {
-      const session = await this.sessionRepo.get(command.tenantId, command.sessionId);
+      const session = await this.sessionRepo.get(
+        command.tenantId,
+        command.sessionId
+      );
       if (!session) {
         throw ErrorFactory.sessionNotFound(command.sessionId, command.tenantId);
       }
@@ -224,10 +265,16 @@ export class SessionManager {
         return session;
       }
 
-      this.stateMachine.validateSessionTransition(session.status, SessionState.COMPLETED);
+      this.stateMachine.validateSessionTransition(
+        session.status,
+        SessionState.COMPLETED
+      );
 
       if (session.assignedDriverId) {
-        await this.driverMgr.unbindDriver(command.tenantId, session.assignedDriverId);
+        await this.driverMgr.unbindDriver(
+          command.tenantId,
+          session.assignedDriverId
+        );
       }
 
       const updated = new SessionEntity(
@@ -247,23 +294,24 @@ export class SessionManager {
 
       this.eventBus.publish({
         eventId: this.idGen.generateEventId(),
-        eventName: 'session.completed',
+        eventName: "session.completed",
         timestamp: this.clock.now().toISOString(),
         tenantId: command.tenantId,
         payload: {
           tenantId: command.tenantId,
           sessionId: command.sessionId,
-          driverId: session.assignedDriverId || ''
+          driverId: session.assignedDriverId || "",
         },
         governance: {
-          producer: 'SessionService',
-          consumers: ['ReportGenerator', 'SocketServer'],
-          deliveryGuarantee: 'AT_LEAST_ONCE',
-          orderingScope: 'SESSION',
-          partitionKey: 'sessionId',
-          idempotencyRequirements: 'Deduplicate, trigger session report compiler pipeline.',
-          version: '1.0.0'
-        }
+          producer: "SessionService",
+          consumers: ["ReportGenerator", "SocketServer"],
+          deliveryGuarantee: "AT_LEAST_ONCE",
+          orderingScope: "SESSION",
+          partitionKey: "sessionId",
+          idempotencyRequirements:
+            "Deduplicate, trigger session report compiler pipeline.",
+          version: "1.0.0",
+        },
       });
 
       return updated;
@@ -272,23 +320,37 @@ export class SessionManager {
     }
   }
 
-  public async reassignSession(command: ReassignSessionCommand): Promise<Session> {
+  public async reassignSession(
+    command: ReassignSessionCommand
+  ): Promise<Session> {
     const lockKey = `lock:session:${command.sessionId}`;
     const acquired = await this.lockMgr.acquireLock(lockKey, 10);
     if (!acquired) {
-      throw ErrorFactory.lockAcquisitionFailed(lockKey, 'Failed to lock session for reassignment.');
+      throw ErrorFactory.lockAcquisitionFailed(
+        lockKey,
+        "Failed to lock session for reassignment."
+      );
     }
 
     try {
-      const session = await this.sessionRepo.get(command.tenantId, command.sessionId);
+      const session = await this.sessionRepo.get(
+        command.tenantId,
+        command.sessionId
+      );
       if (!session) {
         throw ErrorFactory.sessionNotFound(command.sessionId, command.tenantId);
       }
 
-      this.stateMachine.validateSessionTransition(session.status, SessionState.SEARCHING);
+      this.stateMachine.validateSessionTransition(
+        session.status,
+        SessionState.SEARCHING
+      );
 
       if (session.assignedDriverId) {
-        await this.driverMgr.unbindDriver(command.tenantId, session.assignedDriverId);
+        await this.driverMgr.unbindDriver(
+          command.tenantId,
+          session.assignedDriverId
+        );
       }
 
       const updated = new SessionEntity(
@@ -308,22 +370,23 @@ export class SessionManager {
 
       this.eventBus.publish({
         eventId: this.idGen.generateEventId(),
-        eventName: 'session.searching',
+        eventName: "session.searching",
         timestamp: this.clock.now().toISOString(),
         tenantId: command.tenantId,
         payload: {
           tenantId: command.tenantId,
-          sessionId: command.sessionId
+          sessionId: command.sessionId,
         },
         governance: {
-          producer: 'DispatchEngine',
-          consumers: ['MatchingEngine', 'SocketServer'],
-          deliveryGuarantee: 'AT_LEAST_ONCE',
-          orderingScope: 'SESSION',
-          partitionKey: 'sessionId',
-          idempotencyRequirements: 'Avoid triggering multiple matching candidate searches concurrently.',
-          version: '1.0.0'
-        }
+          producer: "DispatchEngine",
+          consumers: ["MatchingEngine", "SocketServer"],
+          deliveryGuarantee: "AT_LEAST_ONCE",
+          orderingScope: "SESSION",
+          partitionKey: "sessionId",
+          idempotencyRequirements:
+            "Avoid triggering multiple matching candidate searches concurrently.",
+          version: "1.0.0",
+        },
       });
 
       return updated;
@@ -332,7 +395,10 @@ export class SessionManager {
     }
   }
 
-  public async getSession(tenantId: TenantId, sessionId: SessionId): Promise<Session> {
+  public async getSession(
+    tenantId: TenantId,
+    sessionId: SessionId
+  ): Promise<Session> {
     const session = await this.sessionRepo.get(tenantId, sessionId);
     if (!session) {
       throw ErrorFactory.sessionNotFound(sessionId, tenantId);

@@ -11,17 +11,17 @@ export class QueueMonitor {
   private queues = new Map<string, QueueDetail>();
 
   constructor() {
-    this.queues.set('T1:dispatch-stream', {
-      queueName: 'dispatch-stream',
-      tenantId: 'T1',
+    this.queues.set("T1:dispatch-stream", {
+      queueName: "dispatch-stream",
+      tenantId: "T1",
       size: 142,
       backlogCount: 3,
       consumerGroupsCount: 2,
       activeWorkersCount: 4,
     });
-    this.queues.set('T1:telemetry-stream', {
-      queueName: 'telemetry-stream',
-      tenantId: 'T1',
+    this.queues.set("T1:telemetry-stream", {
+      queueName: "telemetry-stream",
+      tenantId: "T1",
       size: 12450,
       backlogCount: 0,
       consumerGroupsCount: 1,
@@ -33,13 +33,20 @@ export class QueueMonitor {
    * List queues for a given tenant context.
    */
   public async getTenantQueues(tenantId: string): Promise<QueueDetail[]> {
-    return Array.from(this.queues.values()).filter(q => q.tenantId === tenantId);
+    return Array.from(this.queues.values()).filter(
+      (q) => q.tenantId === tenantId
+    );
   }
 
   /**
    * Record stream changes.
    */
-  public updateQueueSize(tenantId: string, queueName: string, size: number, backlog: number): void {
+  public updateQueueSize(
+    tenantId: string,
+    queueName: string,
+    size: number,
+    backlog: number
+  ): void {
     const key = `${tenantId}:${queueName}`;
     const q = this.queues.get(key) || {
       queueName,

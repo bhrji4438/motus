@@ -24,13 +24,20 @@ export class InMemoryPreferenceStore implements INotificationPreferenceStore {
     };
   }
 
-  public async setPreferences(userId: string, preferences: UserPreferences): Promise<void> {
+  public async setPreferences(
+    userId: string,
+    preferences: UserPreferences
+  ): Promise<void> {
     this.store.set(userId, preferences);
   }
 
-  public async isAllowed(userId: string, channel: string, topic?: string): Promise<boolean> {
+  public async isAllowed(
+    userId: string,
+    channel: string,
+    topic?: string
+  ): Promise<boolean> {
     const prefs = await this.getPreferences(userId);
-    
+
     // Check if the overall channel (e.g. 'push') is disabled for this user
     if (prefs.disabledChannels.includes(channel)) {
       return false;

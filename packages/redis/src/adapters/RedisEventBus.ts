@@ -1,22 +1,22 @@
-
-import type { IEventBus } from '@motus/core';
-import type { MotusEvent, TenantId } from '@motus/types';
-import type { RedisClientManager } from '@/client/RedisClientManager.js';
-import { KeyFactory } from '@/keys/KeyFactory.js';
-import { TenantGuard } from '@/guards/TenantGuard.js';
-import { EventGovernanceValidator } from '@/governance/EventGovernanceValidator.js';
-import { RedisEventRepository } from '@/repositories/RedisEventRepository.js';
-import type { RedisPubSubConfig, RedisStreamsConfig } from '@/config/index.js';
-import { DEFAULT_PUBSUB_CONFIG, DEFAULT_STREAMS_CONFIG } from '@/config/index.js';
+import type { IEventBus } from "@motus/core";
+import type { MotusEvent, TenantId } from "@motus/types";
+import type { RedisClientManager } from "@/client/RedisClientManager.js";
+import { KeyFactory } from "@/keys/KeyFactory.js";
+import { TenantGuard } from "@/guards/TenantGuard.js";
+import { EventGovernanceValidator } from "@/governance/EventGovernanceValidator.js";
+import { RedisEventRepository } from "@/repositories/RedisEventRepository.js";
+import type { RedisPubSubConfig, RedisStreamsConfig } from "@/config/index.js";
+import {
+  DEFAULT_PUBSUB_CONFIG,
+  DEFAULT_STREAMS_CONFIG,
+} from "@/config/index.js";
 import {
   resolveObservability,
   withObservability,
   type RedisObservabilityDeps,
-} from '@/observability/RedisObservability.js';
+} from "@/observability/RedisObservability.js";
 
 type EventHandler = (event: MotusEvent) => void | Promise<void>;
-
-
 
 /**
  * Redis Pub/Sub implementation of IEventBus.
@@ -67,23 +67,26 @@ export class RedisEventBus implements IEventBus {
     const payload = JSON.stringify(event);
 
     // Enforce message size limit
-    if (Buffer.byteLength(payload, 'utf8') > this.pubsub.maxMessageSizeBytes) {
+    if (Buffer.byteLength(payload, "utf8") > this.pubsub.maxMessageSizeBytes) {
       this.obs.logger.warn(`Event exceeds maxMessageSizeBytes, dropping`, {
         eventName: event.eventName,
         tenantId: event.tenantId,
         eventId: event.eventId,
-        sizeBytes: Buffer.byteLength(payload, 'utf8'),
+        sizeBytes: Buffer.byteLength(payload, "utf8"),
       });
       return;
     }
 
-    await withObservability(this.obs, 'RedisEventBus.publish', async () => {
+    await withObservability(this.obs, "RedisEventBus.publish", async () => {
       // Pub/Sub publish
       await (this.manager.client as any).publish(channel, payload);
       this.obs.metrics.recordPubSubPublish(channel);
 
       // AT_LEAST_ONCE — also write to durable event stream
-      if (event.governance.deliveryGuarantee === 'AT_LEAST_ONCE' && this.eventRepo) {
+      if (
+        event.governance.deliveryGuarantee === "AT_LEAST_ONCE" &&
+        this.eventRepo
+      ) {
         const sessionEvent = {
           eventId: event.eventId,
           eventName: event.eventName,
@@ -91,9 +94,13 @@ export class RedisEventBus implements IEventBus {
           payload: event.payload as unknown as Record<string, unknown>,
         };
         // Session ID may not always be available; use a fallback key
-        const sessionId = (event.payload as any)?.sessionId ?? '_global';
+        const sessionId = (event.payload as any)?.sessionId ?? "_global";
         try {
-          await this.eventRepo.appendEvent(event.tenantId, sessionId, sessionEvent);
+          await this.eventRepo.appendEvent(
+            event.tenantId,
+            sessionId,
+            sessionEvent
+          );
         } catch (err) {
           // Do not block Pub/Sub publish if stream append fails
           this.obs.logger.error(`AT_LEAST_ONCE stream write failed`, {
@@ -122,7 +129,11 @@ export class RedisEventBus implements IEventBus {
     handler: EventHandler
   ): Promise<void> {
     TenantGuard.validate(tenantId);
-    const channel = KeyFactory.pubSubChannel(this.pubsub.channelPrefix, tenantId, eventName);
+    const channel = KeyFactory.pubSubChannel(
+      this.pubsub.channelPrefix,
+      tenantId,
+      eventName
+    );
     await this.addSubscription(channel, false, handler);
   }
 
@@ -132,19 +143,32 @@ export class RedisEventBus implements IEventBus {
   async subscribeAll(tenantId: TenantId, handler: EventHandler): Promise<void> {
     TenantGuard.validate(tenantId);
     if (!this.pubsub.enablePatternSubscribe) {
-      this.obs.logger.warn('Pattern subscribe disabled in config; subscribeAll is a no-op');
+      this.obs.logger.warn(
+        "Pattern subscribe disabled in config; subscribeAll is a no-op"
+      );
       return;
     }
-    const pattern = KeyFactory.pubSubTenantWildcard(this.pubsub.channelPrefix, tenantId);
+    const pattern = KeyFactory.pubSubTenantWildcard(
+      this.pubsub.channelPrefix,
+      tenantId
+    );
     await this.addSubscription(pattern, true, handler);
   }
 
   /**
    * Unsubscribes a specific handler from a channel.
    */
-  async unsubscribe(tenantId: TenantId, eventName: string, handler: EventHandler): Promise<void> {
+  async unsubscribe(
+    tenantId: TenantId,
+    eventName: string,
+    handler: EventHandler
+  ): Promise<void> {
     TenantGuard.validate(tenantId);
-    const channel = KeyFactory.pubSubChannel(this.pubsub.channelPrefix, tenantId, eventName);
+    const channel = KeyFactory.pubSubChannel(
+      this.pubsub.channelPrefix,
+      tenantId,
+      eventName
+    );
     const handlers = this.subscriptions.get(channel);
     if (handlers) {
       handlers.delete(handler);
@@ -170,12 +194,15 @@ export class RedisEventBus implements IEventBus {
 
       if (isPattern) {
         await (sub as any).psubscribe(channelOrPattern);
-        sub.on('pmessage', (_pattern: string, channel: string, message: string) => {
-          this.handleMessage(channel, message, channelOrPattern);
-        });
+        sub.on(
+          "pmessage",
+          (_pattern: string, channel: string, message: string) => {
+            this.handleMessage(channel, message, channelOrPattern);
+          }
+        );
       } else {
         await (sub as any).subscribe(channelOrPattern);
-        sub.on('message', (channel: string, message: string) => {
+        sub.on("message", (channel: string, message: string) => {
           this.handleMessage(channel, message, channel);
         });
       }
@@ -184,9 +211,13 @@ export class RedisEventBus implements IEventBus {
     this.subscriptions.get(channelOrPattern)!.add(handler);
   }
 
-  private handleMessage(channel: string, message: string, subscriptionKey: string): void {
+  private handleMessage(
+    channel: string,
+    message: string,
+    subscriptionKey: string
+  ): void {
     // Enforce message size limit
-    if (Buffer.byteLength(message, 'utf8') > this.pubsub.maxMessageSizeBytes) {
+    if (Buffer.byteLength(message, "utf8") > this.pubsub.maxMessageSizeBytes) {
       this.obs.logger.warn(`Received oversized message, dropping`, { channel });
       return;
     }
@@ -195,19 +226,27 @@ export class RedisEventBus implements IEventBus {
     try {
       event = JSON.parse(message) as MotusEvent;
     } catch (err) {
-      this.obs.logger.error(`Failed to parse pub/sub message`, { channel, error: err });
+      this.obs.logger.error(`Failed to parse pub/sub message`, {
+        channel,
+        error: err,
+      });
       return;
     }
 
     // Optional governance validation on receive
     if (this.pubsub.enforceGovernanceOnReceive) {
       try {
-        EventGovernanceValidator.validate(event, (warnMsg) => this.obs.logger.warn(warnMsg));
+        EventGovernanceValidator.validate(event, (warnMsg) =>
+          this.obs.logger.warn(warnMsg)
+        );
       } catch (err) {
-        this.obs.logger.warn(`Received event failed governance validation, dropping`, {
-          channel,
-          error: (err as Error).message,
-        });
+        this.obs.logger.warn(
+          `Received event failed governance validation, dropping`,
+          {
+            channel,
+            error: (err as Error).message,
+          }
+        );
         return;
       }
     }
@@ -219,7 +258,10 @@ export class RedisEventBus implements IEventBus {
 
     for (const handler of handlers) {
       Promise.resolve(handler(event)).catch((err) => {
-        this.obs.logger.error(`Event handler threw an error`, { channel, error: err });
+        this.obs.logger.error(`Event handler threw an error`, {
+          channel,
+          error: err,
+        });
       });
     }
   }

@@ -1,7 +1,10 @@
-import { TenantId, SessionId, SessionState } from '@motus/types';
-import { ISessionRepository, ILockManager } from '@/internal/interfaces/ports.js';
-import { FanoutEngine } from '@/internal/services/fanout/FanoutEngine.js';
-import { SessionManager } from '@/internal/managers/SessionManager.js';
+import { TenantId, SessionId, SessionState } from "@motus/types";
+import {
+  ISessionRepository,
+  ILockManager,
+} from "@/internal/interfaces/ports.js";
+import { FanoutEngine } from "@/internal/services/fanout/FanoutEngine.js";
+import { SessionManager } from "@/internal/managers/SessionManager.js";
 
 export class RetryWorker {
   constructor(
@@ -15,7 +18,10 @@ export class RetryWorker {
    * Evaluates if a session is still searching and triggers the next matching wave.
    * Typically executed after the cooling period (10s) expires.
    */
-  public async evaluateRetry(tenantId: TenantId, sessionId: SessionId): Promise<void> {
+  public async evaluateRetry(
+    tenantId: TenantId,
+    sessionId: SessionId
+  ): Promise<void> {
     const lockKey = `lock:session:${sessionId}`;
     const acquired = await this.lockMgr.acquireLock(lockKey, 10);
     if (!acquired) {

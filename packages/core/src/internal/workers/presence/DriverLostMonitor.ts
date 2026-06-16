@@ -1,9 +1,15 @@
-import { TenantId, SessionId, SessionState } from '@motus/types';
-import { ISessionRepository, ILockManager, IEventBus, IClock, IIdGenerator } from '@/internal/interfaces/ports.js';
-import { SessionEntity } from '@/internal/entities/entities.js';
-import { StateMachineManager } from '@/internal/state/StateMachineManager.js';
-import { SessionManager } from '@/internal/managers/SessionManager.js';
-import { IMetricsCollector } from '@/internal/observability/observability.js';
+import { TenantId, SessionId, SessionState } from "@motus/types";
+import {
+  ISessionRepository,
+  ILockManager,
+  IEventBus,
+  IClock,
+  IIdGenerator,
+} from "@/internal/interfaces/ports.js";
+import { SessionEntity } from "@/internal/entities/entities.js";
+import { StateMachineManager } from "@/internal/state/StateMachineManager.js";
+import { SessionManager } from "@/internal/managers/SessionManager.js";
+import { IMetricsCollector } from "@/internal/observability/observability.js";
 
 export class DriverLostMonitor {
   private readonly stateMachine = new StateMachineManager();
@@ -21,7 +27,10 @@ export class DriverLostMonitor {
   /**
    * Transitions session to DRIVER_LOST and stashes the previous state.
    */
-  public async handleDriverDisconnect(tenantId: TenantId, sessionId: SessionId): Promise<void> {
+  public async handleDriverDisconnect(
+    tenantId: TenantId,
+    sessionId: SessionId
+  ): Promise<void> {
     const lockKey = `lock:session:${sessionId}`;
     const acquired = await this.lockMgr.acquireLock(lockKey, 10);
     if (!acquired) {
@@ -35,7 +44,10 @@ export class DriverLostMonitor {
       }
 
       // Prohibited transition check
-      this.stateMachine.validateSessionTransition(session.status, SessionState.DRIVER_LOST);
+      this.stateMachine.validateSessionTransition(
+        session.status,
+        SessionState.DRIVER_LOST
+      );
 
       // Stash current state as previousSessionState
       const updated = new SessionEntity(
@@ -57,23 +69,25 @@ export class DriverLostMonitor {
       // Publish event
       this.eventBus.publish({
         eventId: this.idGen.generateEventId(),
-        eventName: 'session.driver_lost',
+        eventName: "session.driver_lost",
         timestamp: this.clock.now().toISOString(),
         tenantId,
         payload: {
           tenantId,
           sessionId,
-          lastKnownLocation: session.telemetryPath[session.telemetryPath.length - 1]
+          lastKnownLocation:
+            session.telemetryPath[session.telemetryPath.length - 1],
         },
         governance: {
-          producer: 'PresenceMonitor',
-          consumers: ['DispatchEngine', 'SocketServer'],
-          deliveryGuarantee: 'AT_LEAST_ONCE',
-          orderingScope: 'SESSION',
-          partitionKey: 'sessionId',
-          idempotencyRequirements: 'Initiate session recovery grace period timer.',
-          version: '1.0.0'
-        }
+          producer: "PresenceMonitor",
+          consumers: ["DispatchEngine", "SocketServer"],
+          deliveryGuarantee: "AT_LEAST_ONCE",
+          orderingScope: "SESSION",
+          partitionKey: "sessionId",
+          idempotencyRequirements:
+            "Initiate session recovery grace period timer.",
+          version: "1.0.0",
+        },
       });
 
       this.metrics.incrementDriverLost(tenantId);
@@ -85,7 +99,10 @@ export class DriverLostMonitor {
   /**
    * Reconnects driver and restores the stashed session state.
    */
-  public async handleDriverReconnect(tenantId: TenantId, sessionId: SessionId): Promise<void> {
+  public async handleDriverReconnect(
+    tenantId: TenantId,
+    sessionId: SessionId
+  ): Promise<void> {
     const lockKey = `lock:session:${sessionId}`;
     const acquired = await this.lockMgr.acquireLock(lockKey, 10);
     if (!acquired) {
@@ -98,9 +115,12 @@ export class DriverLostMonitor {
         return;
       }
 
-      const prev = (session as any).previousSessionState || SessionState.DRIVER_ASSIGNED;
+      const prev =
+        (session as any).previousSessionState || SessionState.DRIVER_ASSIGNED;
 
-      this.stateMachine.validateSessionTransition(session.status, prev, { previousState: prev });
+      this.stateMachine.validateSessionTransition(session.status, prev, {
+        previousState: prev,
+      });
 
       const updated = new SessionEntity(
         session.tenantId,
@@ -125,7 +145,10 @@ export class DriverLostMonitor {
   /**
    * Reassigns the session if the 180s grace period has expired without reconnect.
    */
-  public async handleRecoveryTimeout(tenantId: TenantId, sessionId: SessionId): Promise<void> {
+  public async handleRecoveryTimeout(
+    tenantId: TenantId,
+    sessionId: SessionId
+  ): Promise<void> {
     const lockKey = `lock:session:${sessionId}`;
     const acquired = await this.lockMgr.acquireLock(lockKey, 10);
     if (!acquired) {
@@ -142,8 +165,8 @@ export class DriverLostMonitor {
       await this.sessionMgr.reassignSession({
         tenantId,
         sessionId,
-        reason: 'Recovery grace period expired without driver reconnection.',
-        idempotencyKey: this.idGen.generateEventId()
+        reason: "Recovery grace period expired without driver reconnection.",
+        idempotencyKey: this.idGen.generateEventId(),
       });
     } finally {
       await this.lockMgr.releaseLock(lockKey);

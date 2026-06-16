@@ -45,7 +45,7 @@ export interface Distance {
    * Distance value, must be >= 0.0
    */
   readonly value: number;
-  readonly unit: 'METERS' | 'KILOMETERS' | 'MILES';
+  readonly unit: "METERS" | "KILOMETERS" | "MILES";
 }
 
 /**
@@ -56,7 +56,7 @@ export interface Duration {
    * Duration integer value, must be >= 0
    */
   readonly value: number;
-  readonly unit: 'SECONDS' | 'MINUTES' | 'HOURS';
+  readonly unit: "SECONDS" | "MINUTES" | "HOURS";
 }
 
 /**
@@ -78,7 +78,7 @@ export interface Radius {
    * Radius value, must be > 0.0 and <= 100000.0 (100km)
    */
   readonly value: number;
-  readonly unit: 'METERS' | 'KILOMETERS';
+  readonly unit: "METERS" | "KILOMETERS";
 }
 
 /**

@@ -1,4 +1,4 @@
-import client, { Counter, Gauge, Histogram, Registry } from 'prom-client';
+import client, { Counter, Gauge, Histogram, Registry } from "prom-client";
 
 export class MetricRegistry {
   private registry: Registry;
@@ -7,7 +7,10 @@ export class MetricRegistry {
   constructor() {
     this.registry = new Registry();
     // Enable collecting default system metrics (CPU, memory, event loop lag, etc.)
-    client.collectDefaultMetrics({ register: this.registry, prefix: 'motus_sys_' });
+    client.collectDefaultMetrics({
+      register: this.registry,
+      prefix: "motus_sys_",
+    });
   }
 
   /**
@@ -20,7 +23,11 @@ export class MetricRegistry {
   /**
    * Register or retrieve a Counter.
    */
-  public counter(config: { name: string; help: string; labelNames?: string[] }): Counter<string> {
+  public counter(config: {
+    name: string;
+    help: string;
+    labelNames?: string[];
+  }): Counter<string> {
     const existing = this.metricsMap.get(config.name);
     if (existing) return existing;
 
@@ -37,7 +44,11 @@ export class MetricRegistry {
   /**
    * Register or retrieve a Gauge.
    */
-  public gauge(config: { name: string; help: string; labelNames?: string[] }): Gauge<string> {
+  public gauge(config: {
+    name: string;
+    help: string;
+    labelNames?: string[];
+  }): Gauge<string> {
     const existing = this.metricsMap.get(config.name);
     if (existing) return existing;
 
@@ -54,7 +65,12 @@ export class MetricRegistry {
   /**
    * Register or retrieve a Histogram.
    */
-  public histogram(config: { name: string; help: string; labelNames?: string[]; buckets?: number[] }): Histogram<string> {
+  public histogram(config: {
+    name: string;
+    help: string;
+    labelNames?: string[];
+    buckets?: number[];
+  }): Histogram<string> {
     const existing = this.metricsMap.get(config.name);
     if (existing) return existing;
 
@@ -62,7 +78,9 @@ export class MetricRegistry {
       name: config.name,
       help: config.help,
       labelNames: config.labelNames || [],
-      buckets: config.buckets || [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10],
+      buckets: config.buckets || [
+        0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10,
+      ],
       registers: [this.registry],
     });
     this.metricsMap.set(config.name, histogram);

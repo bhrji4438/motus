@@ -3,7 +3,7 @@
  */
 export interface RedisConnectionConfig {
   /** Redis mode — determines which additional config block is required. */
-  mode: 'standalone' | 'sentinel' | 'cluster';
+  mode: "standalone" | "sentinel" | "cluster";
   /** Host for standalone mode. @default 'localhost' */
   host?: string;
   /** Port for standalone mode. @default 6379 */
@@ -26,8 +26,8 @@ export interface RedisConnectionConfig {
 
 /** Default standalone connection config. */
 export const DEFAULT_CONNECTION_CONFIG: RedisConnectionConfig = {
-  mode: 'standalone',
-  host: 'localhost',
+  mode: "standalone",
+  host: "localhost",
   port: 6379,
   db: 0,
   connectTimeoutMs: 5000,

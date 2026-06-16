@@ -1,19 +1,25 @@
-import { Server as SocketIOServer } from 'socket.io';
-import { TenantId, DriverNamespace, MotusEvent } from '@motus/types';
-import { IAuthenticator, AuthContext } from '@/auth/IAuthenticator.js';
-import { AuthenticationManager } from '@/auth/AuthenticationManager.js';
-import { SocketIOTransportAdapter } from '@/transport/SocketIOTransportAdapter.js';
-import { RoomManager } from '@/managers/RoomManager.js';
-import { ConnectionRegistry } from '@/managers/ConnectionRegistry.js';
-import { SubscriptionManager } from '@/managers/SubscriptionManager.js';
-import { RecoveryManager } from '@/recovery/RecoveryManager.js';
-import { RedisAdapterManager, RedisAdapterConfig } from '@/redis/RedisAdapterManager.js';
-import { FailureRecoveryManager } from '@/recovery/FailureRecoveryManager.js';
-import { MetricsManager, SocketObservabilityDeps } from '@/observability/MetricsManager.js';
-import { EventRouter } from '@/routing/EventRouter.js';
-import { DriverGateway } from '@/gateways/DriverGateway.js';
-import { SessionGateway } from '@/gateways/SessionGateway.js';
-import { TrackingGateway } from '@/gateways/TrackingGateway.js';
+import { Server as SocketIOServer } from "socket.io";
+import { TenantId, DriverNamespace, MotusEvent } from "@motus/types";
+import { IAuthenticator, AuthContext } from "@/auth/IAuthenticator.js";
+import { AuthenticationManager } from "@/auth/AuthenticationManager.js";
+import { SocketIOTransportAdapter } from "@/transport/SocketIOTransportAdapter.js";
+import { RoomManager } from "@/managers/RoomManager.js";
+import { ConnectionRegistry } from "@/managers/ConnectionRegistry.js";
+import { SubscriptionManager } from "@/managers/SubscriptionManager.js";
+import { RecoveryManager } from "@/recovery/RecoveryManager.js";
+import {
+  RedisAdapterManager,
+  RedisAdapterConfig,
+} from "@/redis/RedisAdapterManager.js";
+import { FailureRecoveryManager } from "@/recovery/FailureRecoveryManager.js";
+import {
+  MetricsManager,
+  SocketObservabilityDeps,
+} from "@/observability/MetricsManager.js";
+import { EventRouter } from "@/routing/EventRouter.js";
+import { DriverGateway } from "@/gateways/DriverGateway.js";
+import { SessionGateway } from "@/gateways/SessionGateway.js";
+import { TrackingGateway } from "@/gateways/TrackingGateway.js";
 
 export interface SocketIOConfig {
   port?: number;
@@ -71,19 +77,20 @@ export class SocketServer {
 
     // Initialize Socket.IO Server options
     const serverOptions: any = {
-      path: config.path ?? '/socket.io',
+      path: config.path ?? "/socket.io",
       pingInterval: config.pingIntervalMs ?? 25000,
       pingTimeout: config.pingTimeoutMs ?? 20000,
       maxHttpBufferSize: config.maxPayloadSizeBytes ?? 1e6, // 1MB
       cors: {
-        origin: '*',
-        methods: ['GET', 'POST'],
+        origin: "*",
+        methods: ["GET", "POST"],
       },
     };
 
     if (config.connectionStateRecovery?.enabled) {
       serverOptions.connectionStateRecovery = {
-        maxConnectionDelay: config.connectionStateRecovery.maxConnectionDelayMs ?? 120000,
+        maxConnectionDelay:
+          config.connectionStateRecovery.maxConnectionDelayMs ?? 120000,
         skipMiddlewares: false,
       };
     }
@@ -109,7 +116,10 @@ export class SocketServer {
       this.metricsManager
     );
 
-    this.failureRecoveryManager = new FailureRecoveryManager(driverNamespace, this.metricsManager);
+    this.failureRecoveryManager = new FailureRecoveryManager(
+      driverNamespace,
+      this.metricsManager
+    );
 
     this.eventRouter = new EventRouter(
       driverNamespace,
@@ -128,9 +138,21 @@ export class SocketServer {
     );
 
     // Build gateways
-    this.driverGateway = new DriverGateway(this.transport, this.roomManager, this.eventRouter);
-    this.sessionGateway = new SessionGateway(this.transport, this.roomManager, this.eventRouter);
-    this.trackingGateway = new TrackingGateway(this.transport, this.roomManager, this.eventRouter);
+    this.driverGateway = new DriverGateway(
+      this.transport,
+      this.roomManager,
+      this.eventRouter
+    );
+    this.sessionGateway = new SessionGateway(
+      this.transport,
+      this.roomManager,
+      this.eventRouter
+    );
+    this.trackingGateway = new TrackingGateway(
+      this.transport,
+      this.roomManager,
+      this.eventRouter
+    );
 
     // Setup scaling
     this.redisAdapterManager = new RedisAdapterManager(
@@ -169,7 +191,9 @@ export class SocketServer {
   private setupAuthentication(): void {
     this.io.use(async (socket, next) => {
       try {
-        const authContext = await this.authenticationManager.authenticateSocket(socket);
+        const authContext = await this.authenticationManager.authenticateSocket(
+          socket
+        );
         socket.data.auth = authContext;
         next();
       } catch (err) {
@@ -179,7 +203,7 @@ export class SocketServer {
   }
 
   private setupConnectionHandling(): void {
-    this.io.on('connection', async (socket) => {
+    this.io.on("connection", async (socket) => {
       const authContext = socket.data.auth as AuthContext;
       const socketId = socket.id;
 
@@ -196,8 +220,15 @@ export class SocketServer {
       // 4. If driver, join unicast room and clear offline timers
       if (authContext.driverId) {
         const driverRoom = this.roomManager.driverRoom(authContext.driverId);
-        await this.roomManager.joinRoom(socket, driverRoom, authContext.tenantId);
-        this.failureRecoveryManager.handleDriverReconnect(authContext.tenantId, authContext.driverId);
+        await this.roomManager.joinRoom(
+          socket,
+          driverRoom,
+          authContext.tenantId
+        );
+        this.failureRecoveryManager.handleDriverReconnect(
+          authContext.tenantId,
+          authContext.driverId
+        );
 
         // Bind driver events
         this.driverGateway.bindSocketEvents(socketId, socket);
@@ -208,8 +239,11 @@ export class SocketServer {
       this.trackingGateway.bindSocketEvents(socketId, socket);
 
       // Handle custom disconnect cleanup
-      socket.on('disconnect', (reason) => {
-        this.metricsManager.logger.info(`Socket disconnected`, { socketId, reason });
+      socket.on("disconnect", (reason) => {
+        this.metricsManager.logger.info(`Socket disconnected`, {
+          socketId,
+          reason,
+        });
 
         const entry = this.connectionRegistry.deregister(socketId);
         if (entry) {
@@ -217,9 +251,15 @@ export class SocketServer {
 
           if (entry.driverId) {
             // Check if driver has any other active devices connected
-            const count = this.connectionRegistry.getDriverConnectionCount(entry.driverId);
+            const count = this.connectionRegistry.getDriverConnectionCount(
+              entry.driverId
+            );
             if (count === 0) {
-              this.failureRecoveryManager.handleDriverDisconnect(entry.tenantId, entry.driverId, socketId);
+              this.failureRecoveryManager.handleDriverDisconnect(
+                entry.tenantId,
+                entry.driverId,
+                socketId
+              );
             }
           }
         }
@@ -230,13 +270,20 @@ export class SocketServer {
   private subscribeTenantEvents(tenantId: TenantId): void {
     if (!this.eventBus || this.subscribedTenants.has(tenantId)) return;
 
-    if (typeof this.eventBus.subscribeAll === 'function') {
+    if (typeof this.eventBus.subscribeAll === "function") {
       try {
-        this.eventBus.subscribeAll(tenantId, (event: MotusEvent) => this.routeBusEvent(event));
+        this.eventBus.subscribeAll(tenantId, (event: MotusEvent) =>
+          this.routeBusEvent(event)
+        );
         this.subscribedTenants.add(tenantId);
-        this.metricsManager.logger.info(`Subscribed to event bus events for tenant: ${tenantId}`);
+        this.metricsManager.logger.info(
+          `Subscribed to event bus events for tenant: ${tenantId}`
+        );
       } catch (err) {
-        this.metricsManager.logger.error(`Failed to subscribe tenant to EventBus`, err);
+        this.metricsManager.logger.error(
+          `Failed to subscribe tenant to EventBus`,
+          err
+        );
       }
     }
   }
@@ -245,9 +292,11 @@ export class SocketServer {
     if (!this.eventBus) return;
 
     // Check if it exposes standard .on listener (like core EventDispatcher)
-    if (typeof this.eventBus.on === 'function') {
-      this.eventBus.on('*', (event: MotusEvent) => this.routeBusEvent(event));
-      this.metricsManager.logger.info('Bridged local EventDispatcher to SocketServer');
+    if (typeof this.eventBus.on === "function") {
+      this.eventBus.on("*", (event: MotusEvent) => this.routeBusEvent(event));
+      this.metricsManager.logger.info(
+        "Bridged local EventDispatcher to SocketServer"
+      );
     }
   }
 
@@ -260,7 +309,10 @@ export class SocketServer {
     try {
       this.metricsManager.trackLatency(`bridge:${eventName}`, () => {
         // Dispatch to gateways based on schema matrix
-        if (eventName === 'driver.location.updated' || eventName === 'telemetry.sampled') {
+        if (
+          eventName === "driver.location.updated" ||
+          eventName === "telemetry.sampled"
+        ) {
           const sessionId = (payload as any).sessionId;
           if (sessionId) {
             this.trackingGateway.broadcastTrackingUpdate(sessionId, {
@@ -270,7 +322,7 @@ export class SocketServer {
               timestamp: event.timestamp,
             });
           }
-        } else if (eventName === 'dispatch.wave.started') {
+        } else if (eventName === "dispatch.wave.started") {
           const candidates = (payload as any).candidates as string[];
           const offerPayload = {
             sessionId: (payload as any).sessionId,
@@ -282,17 +334,24 @@ export class SocketServer {
               this.driverGateway.sendAssignmentOffer(c, offerPayload);
             }
           }
-        } else if (eventName.startsWith('session.')) {
+        } else if (eventName.startsWith("session.")) {
           const sessionId = (payload as any).sessionId;
           if (sessionId) {
             // Trim 'session.' prefix for client event names
-            const baseName = eventName.replace(/^session\./, '');
-            this.sessionGateway.broadcastSessionEvent(sessionId, baseName, payload);
+            const baseName = eventName.replace(/^session\./, "");
+            this.sessionGateway.broadcastSessionEvent(
+              sessionId,
+              baseName,
+              payload
+            );
           }
         }
       });
     } catch (err) {
-      this.metricsManager.logger.error(`Failed to bridge event to socket clients`, err);
+      this.metricsManager.logger.error(
+        `Failed to bridge event to socket clients`,
+        err
+      );
     }
   }
 }

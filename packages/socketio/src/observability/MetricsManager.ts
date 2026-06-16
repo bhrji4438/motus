@@ -1,5 +1,8 @@
-import { ILogger, ITracer } from '@motus/core';
-import { ISocketMetrics, NoopSocketMetrics } from '@/observability/ISocketMetrics.js';
+import { ILogger, ITracer } from "@motus/core";
+import {
+  ISocketMetrics,
+  NoopSocketMetrics,
+} from "@/observability/ISocketMetrics.js";
 
 export interface SocketObservabilityDeps {
   logger?: ILogger;
@@ -32,15 +35,17 @@ export class MetricsManager {
     try {
       const result = operation();
       if (result instanceof Promise) {
-        return (result as any).then((res: any) => {
-          this.metrics.recordDeliveryLatency(spanName, Date.now() - start);
-          this.tracer.endSpan(span);
-          return res;
-        }).catch((err: any) => {
-          this.logger.error(`Error in operational span: ${spanName}`, err);
-          this.tracer.endSpan(span);
-          throw err;
-        }) as any;
+        return (result as any)
+          .then((res: any) => {
+            this.metrics.recordDeliveryLatency(spanName, Date.now() - start);
+            this.tracer.endSpan(span);
+            return res;
+          })
+          .catch((err: any) => {
+            this.logger.error(`Error in operational span: ${spanName}`, err);
+            this.tracer.endSpan(span);
+            throw err;
+          }) as any;
       }
       this.metrics.recordDeliveryLatency(spanName, Date.now() - start);
       this.tracer.endSpan(span);

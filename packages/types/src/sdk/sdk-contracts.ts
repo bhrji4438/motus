@@ -1,5 +1,5 @@
-import { TenantId, DriverId, SessionId } from '@/domain/value-objects.js';
-import { MotusEvent } from '@/events/events.js';
+import { TenantId, DriverId, SessionId } from "@/domain/value-objects.js";
+import { MotusEvent } from "@/events/events.js";
 import {
   RegisterTenantCommand,
   UpdateTenantCommand,
@@ -9,15 +9,15 @@ import {
   CreateSessionCommand,
   CancelSessionCommand,
   CompleteSessionCommand,
-  ReassignSessionCommand
-} from '@/sdk/commands.js';
+  ReassignSessionCommand,
+} from "@/sdk/commands.js";
 import {
   TenantResult,
   DriverResult,
   SessionResult,
   SessionReportResult,
-  EventResult
-} from '@/sdk/results.js';
+  EventResult,
+} from "@/sdk/results.js";
 
 export interface TenantNamespace {
   registerTenant(command: RegisterTenantCommand): Promise<TenantResult>;
@@ -56,22 +56,34 @@ export interface SessionNamespace {
 
 export interface QueryNamespace {
   getSession(tenantId: TenantId, sessionId: SessionId): Promise<SessionResult>;
-  getSessionEvents(tenantId: TenantId, sessionId: SessionId): Promise<readonly EventResult[]>;
-  getSessionReport(tenantId: TenantId, sessionId: SessionId): Promise<SessionReportResult>;
+  getSessionEvents(
+    tenantId: TenantId,
+    sessionId: SessionId
+  ): Promise<readonly EventResult[]>;
+  getSessionReport(
+    tenantId: TenantId,
+    sessionId: SessionId
+  ): Promise<SessionReportResult>;
 }
 
 export interface EventNamespace {
-  on<T extends MotusEvent['eventName']>(
+  on<T extends MotusEvent["eventName"]>(
     eventPattern: T | string,
-    handler: (event: Extract<MotusEvent, { readonly eventName: T }> | any) => void | Promise<void>
+    handler: (
+      event: Extract<MotusEvent, { readonly eventName: T }> | any
+    ) => void | Promise<void>
   ): void;
-  off<T extends MotusEvent['eventName']>(
+  off<T extends MotusEvent["eventName"]>(
     eventPattern: T | string,
-    handler: (event: Extract<MotusEvent, { readonly eventName: T }> | any) => void | Promise<void>
+    handler: (
+      event: Extract<MotusEvent, { readonly eventName: T }> | any
+    ) => void | Promise<void>
   ): void;
-  once<T extends MotusEvent['eventName']>(
+  once<T extends MotusEvent["eventName"]>(
     eventPattern: T | string,
-    handler: (event: Extract<MotusEvent, { readonly eventName: T }> | any) => void | Promise<void>
+    handler: (
+      event: Extract<MotusEvent, { readonly eventName: T }> | any
+    ) => void | Promise<void>
   ): void;
 }
 

@@ -1,12 +1,12 @@
-import type { Coordinates, TenantId, DriverId } from '@motus/types';
-import type { RedisClient } from '@/client/RedisClientManager.js';
-import { KeyFactory } from '@/keys/KeyFactory.js';
-import { TenantGuard } from '@/guards/TenantGuard.js';
+import type { Coordinates, TenantId, DriverId } from "@motus/types";
+import type { RedisClient } from "@/client/RedisClientManager.js";
+import { KeyFactory } from "@/keys/KeyFactory.js";
+import { TenantGuard } from "@/guards/TenantGuard.js";
 import {
   resolveObservability,
   withObservability,
   type RedisObservabilityDeps,
-} from '@/observability/RedisObservability.js';
+} from "@/observability/RedisObservability.js";
 
 export interface GeoSearchResult {
   driverId: DriverId;
@@ -36,14 +36,27 @@ export class RedisGeoRepository {
    * Adds or updates a driver's geo position.
    * Called directly only for location-update-only operations.
    */
-  async addOrUpdate(tenantId: TenantId, driverId: DriverId, coordinates: Coordinates): Promise<void> {
+  async addOrUpdate(
+    tenantId: TenantId,
+    driverId: DriverId,
+    coordinates: Coordinates
+  ): Promise<void> {
     TenantGuard.validate(tenantId);
     TenantGuard.validateDriverId(driverId);
     const key = KeyFactory.driverGeoIndex(tenantId);
 
-    await withObservability(this.obs, 'RedisGeoRepository.addOrUpdate', async () => {
-      await (this.client as any).geoadd(key, coordinates.longitude, coordinates.latitude, driverId);
-    });
+    await withObservability(
+      this.obs,
+      "RedisGeoRepository.addOrUpdate",
+      async () => {
+        await (this.client as any).geoadd(
+          key,
+          coordinates.longitude,
+          coordinates.latitude,
+          driverId
+        );
+      }
+    );
   }
 
   /**
@@ -59,25 +72,30 @@ export class RedisGeoRepository {
     TenantGuard.validate(tenantId);
     const key = KeyFactory.driverGeoIndex(tenantId);
 
-    return withObservability(this.obs, 'RedisGeoRepository.searchByRadius', async () => {
-      const results = await (this.client as any).georadius(
-        key,
-        center.longitude,
-        center.latitude,
-        radiusMeters,
-        'm',
-        'WITHDIST',
-        'COUNT', limit,
-        'ASC'
-      ) as Array<[string, string]>;
+    return withObservability(
+      this.obs,
+      "RedisGeoRepository.searchByRadius",
+      async () => {
+        const results = (await (this.client as any).georadius(
+          key,
+          center.longitude,
+          center.latitude,
+          radiusMeters,
+          "m",
+          "WITHDIST",
+          "COUNT",
+          limit,
+          "ASC"
+        )) as Array<[string, string]>;
 
-      if (!results || results.length === 0) return [];
+        if (!results || results.length === 0) return [];
 
-      return results.map(([driverId, dist]) => ({
-        driverId: driverId as DriverId,
-        distanceMeters: parseFloat(dist) * 1000, // georadius WITHDIST returns km by default with 'm' unit? No, 'm' returns metres
-      }));
-    });
+        return results.map(([driverId, dist]) => ({
+          driverId: driverId as DriverId,
+          distanceMeters: parseFloat(dist) * 1000, // georadius WITHDIST returns km by default with 'm' unit? No, 'm' returns metres
+        }));
+      }
+    );
   }
 
   /**
@@ -91,10 +109,19 @@ export class RedisGeoRepository {
     TenantGuard.validate(tenantId);
     const key = KeyFactory.driverGeoIndex(tenantId);
 
-    return withObservability(this.obs, 'RedisGeoRepository.getDistance', async () => {
-      const dist = await (this.client as any).geodist(key, driverIdA, driverIdB, 'm') as string | null;
-      return dist !== null ? parseFloat(dist) : null;
-    });
+    return withObservability(
+      this.obs,
+      "RedisGeoRepository.getDistance",
+      async () => {
+        const dist = (await (this.client as any).geodist(
+          key,
+          driverIdA,
+          driverIdB,
+          "m"
+        )) as string | null;
+        return dist !== null ? parseFloat(dist) : null;
+      }
+    );
   }
 
   /**
@@ -105,7 +132,7 @@ export class RedisGeoRepository {
     TenantGuard.validateDriverId(driverId);
     const key = KeyFactory.driverGeoIndex(tenantId);
 
-    await withObservability(this.obs, 'RedisGeoRepository.remove', async () => {
+    await withObservability(this.obs, "RedisGeoRepository.remove", async () => {
       await (this.client as any).zrem(key, driverId);
     });
   }
@@ -116,7 +143,7 @@ export class RedisGeoRepository {
   async count(tenantId: TenantId): Promise<number> {
     TenantGuard.validate(tenantId);
     const key = KeyFactory.driverGeoIndex(tenantId);
-    return withObservability(this.obs, 'RedisGeoRepository.count', async () => {
+    return withObservability(this.obs, "RedisGeoRepository.count", async () => {
       return (this.client as any).zcard(key) as Promise<number>;
     });
   }

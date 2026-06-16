@@ -1,4 +1,4 @@
-import { ErrorCode, MotusError } from '@motus/types';
+import { ErrorCode, MotusError } from "@motus/types";
 
 export class MotusCoreError extends Error implements MotusError {
   public readonly code: ErrorCode;
@@ -15,7 +15,7 @@ export class MotusCoreError extends Error implements MotusError {
   ) {
     super(message);
     this.code = code;
-    this.name = 'MotusCoreError';
+    this.name = "MotusCoreError";
     if (details !== undefined && details !== null) {
       this.details = details;
     }
@@ -28,7 +28,12 @@ export class MotusCoreError extends Error implements MotusError {
 }
 
 export const ErrorFactory = {
-  driverNotFound(driverId: string, tenantId: string, cause?: string, timestamp?: string): MotusCoreError {
+  driverNotFound(
+    driverId: string,
+    tenantId: string,
+    cause?: string,
+    timestamp?: string
+  ): MotusCoreError {
     return new MotusCoreError(
       ErrorCode.MOTUS_DRIVER_NOT_FOUND,
       `Driver with ID ${driverId} not found in tenant ${tenantId}.`,
@@ -38,7 +43,12 @@ export const ErrorFactory = {
     );
   },
 
-  sessionNotFound(sessionId: string, tenantId: string, cause?: string, timestamp?: string): MotusCoreError {
+  sessionNotFound(
+    sessionId: string,
+    tenantId: string,
+    cause?: string,
+    timestamp?: string
+  ): MotusCoreError {
     return new MotusCoreError(
       ErrorCode.MOTUS_SESSION_NOT_FOUND,
       `Session with ID ${sessionId} not found in tenant ${tenantId}.`,
@@ -165,5 +175,5 @@ export const ErrorFactory = {
       undefined,
       timestamp
     );
-  }
+  },
 };

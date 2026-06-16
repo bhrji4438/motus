@@ -1,7 +1,11 @@
-import { TenantId } from '@motus/types';
-import { IDriverRepository, ILockManager, IClock } from '@/internal/interfaces/ports.js';
-import { DriverManager } from '@/internal/managers/DriverManager.js';
-import { IMetricsCollector } from '@/internal/observability/observability.js';
+import { TenantId } from "@motus/types";
+import {
+  IDriverRepository,
+  ILockManager,
+  IClock,
+} from "@/internal/interfaces/ports.js";
+import { DriverManager } from "@/internal/managers/DriverManager.js";
+import { IMetricsCollector } from "@/internal/observability/observability.js";
 
 export class DriverStaleDetector {
   constructor(
@@ -37,7 +41,11 @@ export class DriverStaleDetector {
       const nowMs = this.clock.now().getTime();
 
       for (const driver of drivers) {
-        if (driver.status === 'ONLINE' || driver.status === 'BUSY' || driver.status === 'PAUSED') {
+        if (
+          driver.status === "ONLINE" ||
+          driver.status === "BUSY" ||
+          driver.status === "PAUSED"
+        ) {
           const lastUpdate = new Date(driver.location.timestamp).getTime();
           const elapsedSec = (nowMs - lastUpdate) / 1000;
 

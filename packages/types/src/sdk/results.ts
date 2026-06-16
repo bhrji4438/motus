@@ -1,12 +1,16 @@
-import { DriverStatus, SessionState, MatchingStrategy } from '@/domain/enums.js';
+import {
+  DriverStatus,
+  SessionState,
+  MatchingStrategy,
+} from "@/domain/enums.js";
 import {
   TenantId,
   DriverId,
   SessionId,
   Coordinates,
   VehicleType,
-  TenantScoped
-} from '@/domain/value-objects.js';
+  TenantScoped,
+} from "@/domain/value-objects.js";
 
 /**
  * Result returned by tenant-related commands and queries.
@@ -69,7 +73,7 @@ export interface AssignmentResult extends TenantScoped {
   readonly sessionId: SessionId;
   readonly waveNumber: number;
   readonly driverId: DriverId;
-  readonly status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED';
+  readonly status: "PENDING" | "ACCEPTED" | "REJECTED" | "EXPIRED";
   readonly expiresAt: string; // ISO 8601 UTC
 }
 

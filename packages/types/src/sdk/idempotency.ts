@@ -1,4 +1,4 @@
-import { TenantScoped } from '@/domain/value-objects.js';
+import { TenantScoped } from "@/domain/value-objects.js";
 
 /**
  * A unique client-generated key used to guarantee idempotency for state-mutating requests.
@@ -9,7 +9,7 @@ export type IdempotencyKey = string;
 /**
  * Execution state of an idempotent command session.
  */
-export type IdempotencyStatus = 'IN_FLIGHT' | 'COMPLETED' | 'FAILED';
+export type IdempotencyStatus = "IN_FLIGHT" | "COMPLETED" | "FAILED";
 
 /**
  * Transport-agnostic representation of cached execution state for command replay logs.

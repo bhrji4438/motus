@@ -1,10 +1,20 @@
-import { IMetricsCollector } from '@motus/core';
+import { IMetricsCollector } from "@motus/core";
 
 export interface ISocketMetrics extends IMetricsCollector {
-  recordActiveConnection(tenantId: string, type: 'driver' | 'consumer', count: number): void;
+  recordActiveConnection(
+    tenantId: string,
+    type: "driver" | "consumer",
+    count: number
+  ): void;
   recordHeartbeat(tenantId: string, driverId: string): void;
-  recordSubscription(tenantId: string, roomType: 'tenant' | 'driver' | 'session' | 'tracking'): void;
-  recordUnsubscription(tenantId: string, roomType: 'tenant' | 'driver' | 'session' | 'tracking'): void;
+  recordSubscription(
+    tenantId: string,
+    roomType: "tenant" | "driver" | "session" | "tracking"
+  ): void;
+  recordUnsubscription(
+    tenantId: string,
+    roomType: "tenant" | "driver" | "session" | "tracking"
+  ): void;
   recordMessageSent(event: string, sizeBytes: number): void;
   recordMessageReceived(event: string, sizeBytes: number): void;
   recordBroadcast(room: string, event: string): void;
@@ -20,10 +30,20 @@ export class NoopSocketMetrics implements ISocketMetrics {
   incrementStaleDetection(_tenantId: string): void {}
   incrementDriverLost(_tenantId: string): void {}
 
-  recordActiveConnection(_tenantId: string, _type: 'driver' | 'consumer', _count: number): void {}
+  recordActiveConnection(
+    _tenantId: string,
+    _type: "driver" | "consumer",
+    _count: number
+  ): void {}
   recordHeartbeat(_tenantId: string, _driverId: string): void {}
-  recordSubscription(_tenantId: string, _roomType: 'tenant' | 'driver' | 'session' | 'tracking'): void {}
-  recordUnsubscription(_tenantId: string, _roomType: 'tenant' | 'driver' | 'session' | 'tracking'): void {}
+  recordSubscription(
+    _tenantId: string,
+    _roomType: "tenant" | "driver" | "session" | "tracking"
+  ): void {}
+  recordUnsubscription(
+    _tenantId: string,
+    _roomType: "tenant" | "driver" | "session" | "tracking"
+  ): void {}
   recordMessageSent(_event: string, _sizeBytes: number): void {}
   recordMessageReceived(_event: string, _sizeBytes: number): void {}
   recordBroadcast(_room: string, _event: string): void {}

@@ -1,4 +1,4 @@
-import { Coordinates } from '@motus/types';
+import { Coordinates } from "@motus/types";
 
 const EARTH_RADIUS_METERS = 6371000;
 
@@ -7,9 +7,12 @@ function toRadians(degrees: number): number {
 }
 
 /**
-  * Calculates the spherical distance in meters between two coordinate points.
-  */
-export function calculateHaversineDistance(p1: Coordinates, p2: Coordinates): number {
+ * Calculates the spherical distance in meters between two coordinate points.
+ */
+export function calculateHaversineDistance(
+  p1: Coordinates,
+  p2: Coordinates
+): number {
   const dLat = toRadians(p2.latitude - p1.latitude);
   const dLon = toRadians(p2.longitude - p1.longitude);
 

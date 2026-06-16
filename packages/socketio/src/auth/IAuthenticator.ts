@@ -1,4 +1,4 @@
-import { TenantId, DriverId } from '@motus/types';
+import { TenantId, DriverId } from "@motus/types";
 
 export interface AuthContext {
   readonly tenantId: TenantId;

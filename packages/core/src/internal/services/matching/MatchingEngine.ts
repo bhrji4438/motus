@@ -3,19 +3,19 @@ import {
   Driver,
   DriverId,
   DriverStatus,
-  MatchingStrategy
-} from '@motus/types';
+  MatchingStrategy,
+} from "@motus/types";
 import {
   IDriverRepository,
   ITenantRepository,
   IEtaProvider,
   IMatchingProvider,
   IClock,
-  ILogger
-} from '@/internal/interfaces/ports.js';
-import { IMetricsCollector } from '@/internal/observability/observability.js';
-import { calculateHaversineDistance } from '@/internal/services/matching/haversine.js';
-import { isPointInPolygon } from '@/internal/services/matching/raycast.js';
+  ILogger,
+} from "@/internal/interfaces/ports.js";
+import { IMetricsCollector } from "@/internal/observability/observability.js";
+import { calculateHaversineDistance } from "@/internal/services/matching/haversine.js";
+import { isPointInPolygon } from "@/internal/services/matching/raycast.js";
 
 export class MatchingEngine {
   constructor(
@@ -39,7 +39,9 @@ export class MatchingEngine {
     try {
       const tenant = await this.tenantRepo.get(tenantId);
       if (!tenant) {
-        this.logger.error(`Tenant ${tenantId} not found during candidate matching.`);
+        this.logger.error(
+          `Tenant ${tenantId} not found during candidate matching.`
+        );
         return [];
       }
 
@@ -64,14 +66,21 @@ export class MatchingEngine {
         }
 
         // B. Capacity & Status Check
-        if (driver.status !== DriverStatus.ONLINE || driver.currentLoad >= driver.capacity) {
+        if (
+          driver.status !== DriverStatus.ONLINE ||
+          driver.currentLoad >= driver.capacity
+        ) {
           continue;
         }
 
         // C. Vehicle Type Check
         const reqType = (session as any).requiredVehicleType;
         const drvVehicleType = (driver as any).vehicleType;
-        if (reqType && drvVehicleType && drvVehicleType.toUpperCase() !== reqType.toUpperCase()) {
+        if (
+          reqType &&
+          drvVehicleType &&
+          drvVehicleType.toUpperCase() !== reqType.toUpperCase()
+        ) {
           continue;
         }
 
@@ -109,13 +118,22 @@ export class MatchingEngine {
       if (strategy === MatchingStrategy.ETA && this.etaProvider) {
         // Query ETAs with a strict 100ms timeout
         ranked = await this.rankByEtaWithFallback(session, filtered);
-      } else if (strategy === MatchingStrategy.CUSTOM && this.customMatchingProvider) {
-        const customScores = await this.customMatchingProvider.scoreCandidates(session, filtered);
+      } else if (
+        strategy === MatchingStrategy.CUSTOM &&
+        this.customMatchingProvider
+      ) {
+        const customScores = await this.customMatchingProvider.scoreCandidates(
+          session,
+          filtered
+        );
         ranked = [...customScores];
       } else {
         // Fallback or explicit DISTANCE strategy: Sort by Haversine Distance
-        ranked = filtered.map(driver => {
-          const dist = calculateHaversineDistance(driver.location, session.pickupPoint);
+        ranked = filtered.map((driver) => {
+          const dist = calculateHaversineDistance(
+            driver.location,
+            session.pickupPoint
+          );
           // For distance, smaller is better, so score = -dist (or sort ascending)
           return { driverId: driver.id, score: -dist };
         });
@@ -128,7 +146,7 @@ export class MatchingEngine {
       const durationMs = this.clock.now().getTime() - startTime;
       this.metrics.recordMatchingLatency(tenantId, durationMs);
 
-      return ranked.slice(0, limit).map(r => r.driverId);
+      return ranked.slice(0, limit).map((r) => r.driverId);
     } catch (err: any) {
       this.logger.error(`Error in MatchingEngine: ${err.message}`, err);
       return [];
@@ -146,13 +164,19 @@ export class MatchingEngine {
     try {
       // Create a promise that rejects after 100ms
       const timeoutPromise = new Promise<never>((_, reject) =>
-        globalThis.setTimeout(() => reject(new Error('ETA calculation timed out')), 100)
+        globalThis.setTimeout(
+          () => reject(new Error("ETA calculation timed out")),
+          100
+        )
       );
 
       // Perform all ETA calculations
       const etaPromise = Promise.all(
-        candidates.map(async driver => {
-          const eta = await this.etaProvider!.calculateEta(driver.location, session.pickupPoint);
+        candidates.map(async (driver) => {
+          const eta = await this.etaProvider!.calculateEta(
+            driver.location,
+            session.pickupPoint
+          );
           // score = -durationSeconds (shorter duration is better)
           return { driverId: driver.id, score: -eta.durationSeconds };
         })
@@ -166,9 +190,15 @@ export class MatchingEngine {
     }
   }
 
-  private rankByDistance(session: Session, candidates: Driver[]): { driverId: DriverId; score: number }[] {
-    return candidates.map(driver => {
-      const dist = calculateHaversineDistance(driver.location, session.pickupPoint);
+  private rankByDistance(
+    session: Session,
+    candidates: Driver[]
+  ): { driverId: DriverId; score: number }[] {
+    return candidates.map((driver) => {
+      const dist = calculateHaversineDistance(
+        driver.location,
+        session.pickupPoint
+      );
       return { driverId: driver.id, score: -dist };
     });
   }

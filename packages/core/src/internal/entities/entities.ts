@@ -18,8 +18,8 @@ import {
   Duration,
   ETA,
   DriverStatus,
-  SessionState
-} from '@motus/types';
+  SessionState,
+} from "@motus/types";
 
 export class TenantEntity implements Tenant {
   constructor(
@@ -41,7 +41,7 @@ export class DriverEntity implements Driver {
     public readonly currentLoad: number,
     public readonly capacity: number,
     public readonly lastHeartbeat: string,
-    public readonly vehicleType: string = 'CAR'
+    public readonly vehicleType: string = "CAR"
   ) {}
 }
 

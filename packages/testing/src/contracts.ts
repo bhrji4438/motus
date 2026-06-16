@@ -1,4 +1,4 @@
-import { expect } from 'vitest';
+import { expect } from "vitest";
 
 export interface EventEnvelope {
   eventId: string;
@@ -22,15 +22,15 @@ export interface EventEnvelope {
  */
 export function validateEventEnvelope(event: EventEnvelope): void {
   expect(event).toBeDefined();
-  expect(event.eventId).toBeTypeOf('string');
-  expect(event.eventName).toBeTypeOf('string');
-  expect(event.timestamp).toBeTypeOf('string');
-  expect(event.tenantId).toBeTypeOf('string');
+  expect(event.eventId).toBeTypeOf("string");
+  expect(event.eventName).toBeTypeOf("string");
+  expect(event.timestamp).toBeTypeOf("string");
+  expect(event.tenantId).toBeTypeOf("string");
   expect(event.payload).toBeDefined();
-  expect(event.governance).toBeTypeOf('object');
-  expect(event.governance.producer).toBeTypeOf('string');
-  expect(event.governance.consumers).toBeTypeOf('object'); // Array
-  expect(event.governance.version).toBeTypeOf('string');
+  expect(event.governance).toBeTypeOf("object");
+  expect(event.governance.producer).toBeTypeOf("string");
+  expect(event.governance.consumers).toBeTypeOf("object"); // Array
+  expect(event.governance.version).toBeTypeOf("string");
 }
 
 /**
@@ -38,9 +38,9 @@ export function validateEventEnvelope(event: EventEnvelope): void {
  */
 export function validateRedisLocationMessage(message: any): void {
   expect(message).toBeDefined();
-  expect(message.latitude).toBeTypeOf('number');
-  expect(message.longitude).toBeTypeOf('number');
-  expect(message.timestamp).toBeTypeOf('number');
+  expect(message.latitude).toBeTypeOf("number");
+  expect(message.longitude).toBeTypeOf("number");
+  expect(message.timestamp).toBeTypeOf("number");
 }
 
 /**
@@ -48,21 +48,21 @@ export function validateRedisLocationMessage(message: any): void {
  */
 export function validateSocketIOEvent(event: string, payload: any): void {
   expect(eventNameIsValid(event)).toBe(true);
-  expect(payload).toBeTypeOf('object');
+  expect(payload).toBeTypeOf("object");
 }
 
 function eventNameIsValid(event: string): boolean {
   const validPrefixes = [
-    'driver:presence',
-    'driver:location',
-    'assignment:accept',
-    'assignment:reject',
-    'session:subscribe',
-    'session:unsubscribe',
-    'tracking:subscribe',
-    'tracking:unsubscribe',
-    'session:assigned',
-    'tracking:update',
+    "driver:presence",
+    "driver:location",
+    "assignment:accept",
+    "assignment:reject",
+    "session:subscribe",
+    "session:unsubscribe",
+    "tracking:subscribe",
+    "tracking:unsubscribe",
+    "session:assigned",
+    "tracking:update",
   ];
   return validPrefixes.some((prefix) => event.startsWith(prefix));
 }

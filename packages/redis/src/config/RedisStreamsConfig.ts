@@ -26,8 +26,8 @@ export interface RedisStreamsConfig {
 
 /** Default streams config. */
 export const DEFAULT_STREAMS_CONFIG: RedisStreamsConfig = {
-  telemetryConsumerGroup: 'motus-telemetry',
-  eventConsumerGroup: 'motus-events',
+  telemetryConsumerGroup: "motus-telemetry",
+  eventConsumerGroup: "motus-events",
   pendingEntryIdleMs: 60000,
   readBatchSize: 100,
   eventAppendMaxRetries: 3,

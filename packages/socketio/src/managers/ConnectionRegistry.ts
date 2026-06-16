@@ -1,6 +1,6 @@
-import { TenantId, DriverId } from '@motus/types';
-import { AuthContext } from '@/auth/IAuthenticator.js';
-import { MetricsManager } from '@/observability/MetricsManager.js';
+import { TenantId, DriverId } from "@motus/types";
+import { AuthContext } from "@/auth/IAuthenticator.js";
+import { MetricsManager } from "@/observability/MetricsManager.js";
 
 export interface ConnectionEntry {
   readonly socketId: string;
@@ -21,7 +21,11 @@ export class ConnectionRegistry {
 
   constructor(private readonly metrics: MetricsManager) {}
 
-  public register(socketId: string, authContext: AuthContext, socket: any): ConnectionEntry {
+  public register(
+    socketId: string,
+    authContext: AuthContext,
+    socket: any
+  ): ConnectionEntry {
     const entryData: any = {
       socketId,
       tenantId: authContext.tenantId,
@@ -47,14 +51,22 @@ export class ConnectionRegistry {
         this.driverIdToSockets.set(entry.driverId, new Set());
       }
       this.driverIdToSockets.get(entry.driverId)!.add(socketId);
-      this.metrics.metrics.recordActiveConnection(entry.tenantId, 'driver', this.getDriverConnectionCount(entry.driverId));
+      this.metrics.metrics.recordActiveConnection(
+        entry.tenantId,
+        "driver",
+        this.getDriverConnectionCount(entry.driverId)
+      );
     } else {
-      const uId = entry.userId ?? 'anonymous';
+      const uId = entry.userId ?? "anonymous";
       if (!this.userIdToSockets.has(uId)) {
         this.userIdToSockets.set(uId, new Set());
       }
       this.userIdToSockets.get(uId)!.add(socketId);
-      this.metrics.metrics.recordActiveConnection(entry.tenantId, 'consumer', this.getUserConnectionCount(uId));
+      this.metrics.metrics.recordActiveConnection(
+        entry.tenantId,
+        "consumer",
+        this.getUserConnectionCount(uId)
+      );
     }
 
     if (!this.tenantIdToSockets.has(entry.tenantId)) {
@@ -62,7 +74,11 @@ export class ConnectionRegistry {
     }
     this.tenantIdToSockets.get(entry.tenantId)!.add(socketId);
 
-    this.metrics.logger.debug(`Socket registered in registry`, { socketId, tenantId: entry.tenantId, driverId: entry.driverId });
+    this.metrics.logger.debug(`Socket registered in registry`, {
+      socketId,
+      tenantId: entry.tenantId,
+      driverId: entry.driverId,
+    });
     return entry;
   }
 
@@ -80,9 +96,13 @@ export class ConnectionRegistry {
           this.driverIdToSockets.delete(entry.driverId);
         }
       }
-      this.metrics.metrics.recordActiveConnection(entry.tenantId, 'driver', this.getDriverConnectionCount(entry.driverId));
+      this.metrics.metrics.recordActiveConnection(
+        entry.tenantId,
+        "driver",
+        this.getDriverConnectionCount(entry.driverId)
+      );
     } else {
-      const uId = entry.userId ?? 'anonymous';
+      const uId = entry.userId ?? "anonymous";
       const set = this.userIdToSockets.get(uId);
       if (set) {
         set.delete(socketId);
@@ -90,7 +110,11 @@ export class ConnectionRegistry {
           this.userIdToSockets.delete(uId);
         }
       }
-      this.metrics.metrics.recordActiveConnection(entry.tenantId, 'consumer', this.getUserConnectionCount(uId));
+      this.metrics.metrics.recordActiveConnection(
+        entry.tenantId,
+        "consumer",
+        this.getUserConnectionCount(uId)
+      );
     }
 
     const tenantSet = this.tenantIdToSockets.get(entry.tenantId);
@@ -101,7 +125,10 @@ export class ConnectionRegistry {
       }
     }
 
-    this.metrics.logger.debug(`Socket deregistered from registry`, { socketId, tenantId: entry.tenantId });
+    this.metrics.logger.debug(`Socket deregistered from registry`, {
+      socketId,
+      tenantId: entry.tenantId,
+    });
     return entry;
   }
 

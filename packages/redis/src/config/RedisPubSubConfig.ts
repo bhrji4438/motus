@@ -9,7 +9,7 @@ export interface RedisPubSubConfig {
    * Messages exceeding this are dropped with a warning. @default 1048576 (1 MB)
    */
   maxMessageSizeBytes: number;
-  /** Channel name prefix for all Motus events. @default 'motus' */
+  /** Channel name prefix for all Vectro events. @default 'vectro' */
   channelPrefix: string;
   /**
    * Validate full governance metadata on every received Pub/Sub message.
@@ -22,6 +22,6 @@ export interface RedisPubSubConfig {
 export const DEFAULT_PUBSUB_CONFIG: RedisPubSubConfig = {
   enablePatternSubscribe: true,
   maxMessageSizeBytes: 1_048_576,
-  channelPrefix: 'motus',
+  channelPrefix: "vectro",
   enforceGovernanceOnReceive: true,
 };

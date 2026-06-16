@@ -4,14 +4,19 @@ import {
   Assignment,
   DispatchWave,
   DispatchWaveStatus,
-  SessionState
-} from '@motus/types';
-import { ILockManager, IEventBus, IClock, IIdGenerator } from '@/internal/interfaces/ports.js';
-import { SessionEntity } from '@/internal/entities/entities.js';
-import { MatchingEngine } from '@/internal/services/matching/MatchingEngine.js';
-import { ConfigurationManager } from '@/public/config/ConfigurationManager.js';
-import { IMetricsCollector } from '@/internal/observability/observability.js';
-import { SessionManager } from '@/internal/managers/SessionManager.js';
+  SessionState,
+} from "@motus/types";
+import {
+  ILockManager,
+  IEventBus,
+  IClock,
+  IIdGenerator,
+} from "@/internal/interfaces/ports.js";
+import { SessionEntity } from "@/internal/entities/entities.js";
+import { MatchingEngine } from "@/internal/services/matching/MatchingEngine.js";
+import { ConfigurationManager } from "@/public/config/ConfigurationManager.js";
+import { IMetricsCollector } from "@/internal/observability/observability.js";
+import { SessionManager } from "@/internal/managers/SessionManager.js";
 
 export class FanoutEngine {
   constructor(
@@ -53,22 +58,23 @@ export class FanoutEngine {
       // No candidates found
       this.eventBus.publish({
         eventId: this.idGen.generateEventId(),
-        eventName: 'dispatch.no_driver_found',
+        eventName: "dispatch.no_driver_found",
         timestamp: this.clock.now().toISOString(),
         tenantId,
         payload: {
           tenantId,
-          sessionId: session.id
+          sessionId: session.id,
         },
         governance: {
-          producer: 'MatchingEngine',
-          consumers: ['SessionService', 'SocketServer'],
-          deliveryGuarantee: 'AT_LEAST_ONCE',
-          orderingScope: 'SESSION',
-          partitionKey: 'sessionId',
-          idempotencyRequirements: 'Escalate matching rules or transition session to cancelled.',
-          version: '1.0.0'
-        }
+          producer: "MatchingEngine",
+          consumers: ["SessionService", "SocketServer"],
+          deliveryGuarantee: "AT_LEAST_ONCE",
+          orderingScope: "SESSION",
+          partitionKey: "sessionId",
+          idempotencyRequirements:
+            "Escalate matching rules or transition session to cancelled.",
+          version: "1.0.0",
+        },
       });
       return;
     }
@@ -102,14 +108,13 @@ export class FanoutEngine {
           assignments.push({
             driverId,
             sessionId: session.id,
-            status: 'PENDING' as const,
-            lockAcquired: true
+            status: "PENDING" as const,
+            lockAcquired: true,
           });
           reservedCandidates.push(driverId);
-        } else {
-          // Release driver lock if candidate lock failed
-          await this.lockMgr.releaseLock(driverLockKey);
         }
+        // Always release driver lock after check/reservation to avoid deadlocking offer acceptance
+        await this.lockMgr.releaseLock(driverLockKey);
       }
     }
 
@@ -125,7 +130,7 @@ export class FanoutEngine {
       candidates: reservedCandidates,
       assignments,
       startedAt: nowStr,
-      expiresAt
+      expiresAt,
     };
 
     // Update Session with the new wave
@@ -135,7 +140,10 @@ export class FanoutEngine {
 
     if (sessionLocked) {
       try {
-        const currentSession = await this.sessionMgr.getSession(tenantId, session.id);
+        const currentSession = await this.sessionMgr.getSession(
+          tenantId,
+          session.id
+        );
         if (currentSession.status === SessionState.SEARCHING) {
           const updatedSession = new SessionEntity(
             currentSession.tenantId,
@@ -150,12 +158,12 @@ export class FanoutEngine {
             (currentSession as any).requiredVehicleType
           );
 
-          await this.sessionMgr['sessionRepo'].save(updatedSession);
+          await this.sessionMgr["sessionRepo"].save(updatedSession);
 
           // Publish event
           this.eventBus.publish({
             eventId: this.idGen.generateEventId(),
-            eventName: 'dispatch.wave.started',
+            eventName: "dispatch.wave.started",
             timestamp: nowStr,
             tenantId,
             payload: {
@@ -163,17 +171,18 @@ export class FanoutEngine {
               sessionId: session.id,
               waveNumber: nextWaveNum,
               candidates: reservedCandidates,
-              expiresAt
+              expiresAt,
             },
             governance: {
-              producer: 'FanoutEngine',
-              consumers: ['SocketServer'],
-              deliveryGuarantee: 'AT_LEAST_ONCE',
-              orderingScope: 'SESSION',
-              partitionKey: 'sessionId',
-              idempotencyRequirements: 'Notify candidates, start wave timer check.',
-              version: '1.0.0'
-            }
+              producer: "FanoutEngine",
+              consumers: ["SocketServer"],
+              deliveryGuarantee: "AT_LEAST_ONCE",
+              orderingScope: "SESSION",
+              partitionKey: "sessionId",
+              idempotencyRequirements:
+                "Notify candidates, start wave timer check.",
+              version: "1.0.0",
+            },
           });
 
           // Record fanout latency metrics
@@ -191,10 +200,15 @@ export class FanoutEngine {
     }
   }
 
-  public async releaseWaveLocks(sessionId: string, candidateIds: readonly DriverId[]): Promise<void> {
+  public async releaseWaveLocks(
+    sessionId: string,
+    candidateIds: readonly DriverId[]
+  ): Promise<void> {
     for (const driverId of candidateIds) {
       await this.lockMgr.releaseLock(`lock:driver:${driverId}`);
-      await this.lockMgr.releaseLock(`lock:candidate:${driverId}:session:${sessionId}`);
+      await this.lockMgr.releaseLock(
+        `lock:candidate:${driverId}:session:${sessionId}`
+      );
     }
   }
 }

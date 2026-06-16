@@ -1,4 +1,4 @@
-import { TenantScoped } from '@/domain/value-objects.js';
+import { TenantScoped } from "@/domain/value-objects.js";
 
 /**
  * Declares system-level ownership, consumer roles, delivery guarantees,
@@ -16,11 +16,11 @@ export interface EventGovernanceMetadata {
   /**
    * Quality of Service delivery guarantee.
    */
-  readonly deliveryGuarantee: 'AT_LEAST_ONCE' | 'AT_MOST_ONCE';
+  readonly deliveryGuarantee: "AT_LEAST_ONCE" | "AT_MOST_ONCE";
   /**
    * Scope of sequence ordering constraint.
    */
-  readonly orderingScope: 'DRIVER' | 'SESSION' | 'TENANT';
+  readonly orderingScope: "DRIVER" | "SESSION" | "TENANT";
   /**
    * Payload field name used as the routing partition key.
    */
@@ -38,7 +38,8 @@ export interface EventGovernanceMetadata {
 /**
  * Standardized event envelope wrapping all platform domain events.
  */
-export interface EventEnvelope<TName extends string, TPayload> extends TenantScoped {
+export interface EventEnvelope<TName extends string, TPayload>
+  extends TenantScoped {
   /**
    * Globally unique identifier for the event instance (UUIDv4).
    */

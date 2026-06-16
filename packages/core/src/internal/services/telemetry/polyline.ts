@@ -1,9 +1,9 @@
-import { Coordinates } from '@motus/types';
+import { Coordinates } from "@motus/types";
 
 function encodeValue(val: number): string {
   let v = Math.round(val * 1e5);
   v = v < 0 ? ~(v << 1) : v << 1;
-  let str = '';
+  let str = "";
   while (v >= 0x20) {
     str += String.fromCharCode((0x20 | (v & 0x1f)) + 63);
     v >>= 5;
@@ -18,7 +18,7 @@ function encodeValue(val: number): string {
 export function encodePolyline(points: readonly Coordinates[]): string {
   let lastLat = 0;
   let lastLng = 0;
-  let result = '';
+  let result = "";
 
   for (const point of points) {
     const lat = point.latitude;
@@ -71,7 +71,7 @@ export function decodePolyline(str: string): Coordinates[] {
 
     points.push({
       latitude: lat / 1e5,
-      longitude: lng / 1e5
+      longitude: lng / 1e5,
     });
   }
 

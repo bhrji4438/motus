@@ -1,7 +1,7 @@
-import { GenericContainer, type StartedTestContainer } from 'testcontainers';
-import { Redis } from 'ioredis';
-import { RedisClientManager } from '@/client/RedisClientManager.js';
-import { DEFAULT_MOTUS_REDIS_CONFIG } from '@/config/index.js';
+import { GenericContainer, type StartedTestContainer } from "testcontainers";
+import { Redis } from "ioredis";
+import { RedisClientManager } from "@/client/RedisClientManager.js";
+import { DEFAULT_MOTUS_REDIS_CONFIG } from "@/config/index.js";
 
 /**
  * Testcontainers helper for spinning up a real Redis 7.2 instance per test suite.
@@ -25,9 +25,9 @@ export interface RedisTestContext {
 }
 
 export async function startRedisTestContainer(): Promise<RedisTestContext> {
-  const container = await new GenericContainer('redis:7.2-alpine')
+  const container = await new GenericContainer("redis:7.2-alpine")
     .withExposedPorts(6379)
-    .withCommand(['redis-server', '--save', '', '--appendonly', 'no'])
+    .withCommand(["redis-server", "--save", "", "--appendonly", "no"])
     .start();
 
   const host = container.getHost();

@@ -1,5 +1,5 @@
-import crypto from 'crypto';
-import { AuditRecord } from '@/types/contracts.js';
+import crypto from "crypto";
+import { AuditRecord } from "@/types/contracts.js";
 
 export class AuditLogService {
   private logs: AuditRecord[] = [];
@@ -36,7 +36,7 @@ export class AuditLogService {
     tenantId: string,
     filters: { action?: string; actorId?: string } = {}
   ): Promise<AuditRecord[]> {
-    return this.logs.filter(log => {
+    return this.logs.filter((log) => {
       if (log.tenantId !== tenantId) return false;
       if (filters.action && log.action !== filters.action) return false;
       if (filters.actorId && log.actorId !== filters.actorId) return false;
@@ -48,17 +48,16 @@ export class AuditLogService {
    * Export audit records in CSV format.
    */
   public async exportCSV(tenantId: string): Promise<string> {
-    const tenantLogs = this.logs.filter(log => log.tenantId === tenantId);
-    const headers = 'ID,ActorID,Role,Action,Resource,Details,Timestamp\n';
+    const tenantLogs = this.logs.filter((log) => log.tenantId === tenantId);
+    const headers = "ID,ActorID,Role,Action,Resource,Details,Timestamp\n";
     const rows = tenantLogs
       .map(
-        log =>
-          `"${log.id}","${log.actorId}","${log.role}","${log.action}","${log.resource}","${log.details.replace(
-            /"/g,
-            '""'
-          )}","${log.timestamp}"`
+        (log) =>
+          `"${log.id}","${log.actorId}","${log.role}","${log.action}","${
+            log.resource
+          }","${log.details.replace(/"/g, '""')}","${log.timestamp}"`
       )
-      .join('\n');
+      .join("\n");
     return headers + rows;
   }
 }

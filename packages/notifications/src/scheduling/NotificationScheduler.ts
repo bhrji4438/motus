@@ -1,12 +1,12 @@
-import crypto from 'crypto';
-import { NotificationPayload } from '@/providers/INotificationProvider.js';
+import crypto from "crypto";
+import { NotificationPayload } from "@/providers/INotificationProvider.js";
 
 export interface ScheduledJob {
   jobId: string;
   tenantId: string;
   payload: NotificationPayload;
   sendAt: string; // ISO timestamp
-  status: 'scheduled' | 'sent' | 'cancelled';
+  status: "scheduled" | "sent" | "cancelled";
   idempotencyKey?: string | undefined;
   createdAt: string;
 }
@@ -20,7 +20,9 @@ export interface INotificationScheduler {
   ): Promise<string>;
   cancel(jobId: string): Promise<boolean>;
   getPendingJobs(tenantId?: string): Promise<ScheduledJob[]>;
-  processPendingJobs(dispatcher: (tenantId: string, payload: NotificationPayload) => Promise<any>): Promise<number>;
+  processPendingJobs(
+    dispatcher: (tenantId: string, payload: NotificationPayload) => Promise<any>
+  ): Promise<number>;
 }
 
 export class InMemoryNotificationScheduler implements INotificationScheduler {
@@ -47,7 +49,7 @@ export class InMemoryNotificationScheduler implements INotificationScheduler {
       if (this.idempotencyKeys.has(idempotencyKey)) {
         // Find existing job
         const existingJob = Array.from(this.jobs.values()).find(
-          j => j.idempotencyKey === idempotencyKey
+          (j) => j.idempotencyKey === idempotencyKey
         );
         if (existingJob) return existingJob.jobId;
       }
@@ -60,7 +62,7 @@ export class InMemoryNotificationScheduler implements INotificationScheduler {
       tenantId,
       payload,
       sendAt: sendAt.toISOString(),
-      status: 'scheduled',
+      status: "scheduled",
       idempotencyKey,
       createdAt: new Date().toISOString(),
     };
@@ -74,11 +76,11 @@ export class InMemoryNotificationScheduler implements INotificationScheduler {
    */
   public async cancel(jobId: string): Promise<boolean> {
     const job = this.jobs.get(jobId);
-    if (!job || job.status !== 'scheduled') {
+    if (!job || job.status !== "scheduled") {
       return false;
     }
 
-    job.status = 'cancelled';
+    job.status = "cancelled";
     if (job.idempotencyKey) {
       this.idempotencyKeys.delete(job.idempotencyKey);
     }
@@ -91,7 +93,8 @@ export class InMemoryNotificationScheduler implements INotificationScheduler {
    */
   public async getPendingJobs(tenantId?: string): Promise<ScheduledJob[]> {
     return Array.from(this.jobs.values()).filter(
-      job => job.status === 'scheduled' && (!tenantId || job.tenantId === tenantId)
+      (job) =>
+        job.status === "scheduled" && (!tenantId || job.tenantId === tenantId)
     );
   }
 
@@ -109,18 +112,18 @@ export class InMemoryNotificationScheduler implements INotificationScheduler {
 
     try {
       const pending = Array.from(this.jobs.values()).filter(
-        job => job.status === 'scheduled' && new Date(job.sendAt) <= now
+        (job) => job.status === "scheduled" && new Date(job.sendAt) <= now
       );
 
       for (const job of pending) {
         // Double-delivery check: verify job status hasn't changed
         const currentJob = this.jobs.get(job.jobId);
-        if (!currentJob || currentJob.status !== 'scheduled') {
+        if (!currentJob || currentJob.status !== "scheduled") {
           continue;
         }
 
         // Optimistically mark as sent to avoid race conditions
-        currentJob.status = 'sent';
+        currentJob.status = "sent";
         this.jobs.set(job.jobId, currentJob);
 
         try {
@@ -128,7 +131,7 @@ export class InMemoryNotificationScheduler implements INotificationScheduler {
           processedCount++;
         } catch {
           // If execution fails, restore to 'scheduled' for retry
-          currentJob.status = 'scheduled';
+          currentJob.status = "scheduled";
           this.jobs.set(job.jobId, currentJob);
         }
       }

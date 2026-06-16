@@ -1,5 +1,5 @@
-import { WebSocketServer, WebSocket } from 'ws';
-import { IncomingMessage } from 'http';
+import { WebSocketServer, WebSocket } from "ws";
+import { IncomingMessage } from "http";
 
 interface SseClient {
   tenantId: string;
@@ -24,10 +24,10 @@ export class RealtimeEngine {
     this.wss = new WebSocketServer({ noServer: true });
 
     // Handle WebSocket upgrade manually
-    server.on('upgrade', (request: IncomingMessage, socket: any, head: any) => {
-      const url = new URL(request.url || '', `http://${request.headers.host}`);
-      if (url.pathname === '/dashboard/rt') {
-        const tenantId = url.searchParams.get('tenantId') || 'unknown';
+    server.on("upgrade", (request: IncomingMessage, socket: any, head: any) => {
+      const url = new URL(request.url || "", `http://${request.headers.host}`);
+      if (url.pathname === "/dashboard/rt") {
+        const tenantId = url.searchParams.get("tenantId") || "unknown";
         this.wss?.handleUpgrade(request, socket, head, (ws) => {
           this.registerWsClient(ws, tenantId);
         });
@@ -39,22 +39,28 @@ export class RealtimeEngine {
     const clientRecord: WsClient = { tenantId, ws };
     this.wsClients.add(clientRecord);
 
-    ws.on('close', () => {
+    ws.on("close", () => {
       this.wsClients.delete(clientRecord);
     });
 
-    ws.on('error', () => {
+    ws.on("error", () => {
       this.wsClients.delete(clientRecord);
     });
 
     // Send initial handshake acknowledgement
-    ws.send(JSON.stringify({ event: 'rt.handshake', status: 'connected', tenantId }));
+    ws.send(
+      JSON.stringify({ event: "rt.handshake", status: "connected", tenantId })
+    );
   }
 
   /**
    * Register a Server-Sent Events client path.
    */
-  public registerSseClient(tenantId: string, writeFn: (data: string) => void, closeFn: () => void): SseClient {
+  public registerSseClient(
+    tenantId: string,
+    writeFn: (data: string) => void,
+    closeFn: () => void
+  ): SseClient {
     const clientRecord: SseClient = {
       tenantId,
       write: writeFn,
@@ -72,11 +78,19 @@ export class RealtimeEngine {
    * Broadcast telemetry data to all active WS and SSE listeners matching the tenantId.
    */
   public broadcast(tenantId: string, eventName: string, payload: any): void {
-    const message = JSON.stringify({ event: eventName, tenantId, payload, timestamp: new Date().toISOString() });
+    const message = JSON.stringify({
+      event: eventName,
+      tenantId,
+      payload,
+      timestamp: new Date().toISOString(),
+    });
 
     // 1. Send via WebSocket
     for (const client of this.wsClients) {
-      if (client.tenantId === tenantId && client.ws.readyState === WebSocket.OPEN) {
+      if (
+        client.tenantId === tenantId &&
+        client.ws.readyState === WebSocket.OPEN
+      ) {
         client.ws.send(message);
       }
     }

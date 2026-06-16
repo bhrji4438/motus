@@ -1,4 +1,4 @@
-import { ErrorCode, MotusError } from '@motus/types';
+import { ErrorCode, MotusError } from "@motus/types";
 
 export class SocketIOTransportError extends Error {
   constructor(
@@ -9,7 +9,7 @@ export class SocketIOTransportError extends Error {
     cause?: Error
   ) {
     super(message, { cause });
-    this.name = 'SocketIOTransportError';
+    this.name = "SocketIOTransportError";
   }
 
   public toMotusError(): MotusError {
@@ -18,27 +18,53 @@ export class SocketIOTransportError extends Error {
       message: this.message,
       timestamp: new Date().toISOString(),
     };
-    
+
     if (this.cause) {
       error.cause = (this.cause as Error).message;
     }
-    
+
     if (this.details) {
       error.details = this.details;
     }
-    
+
     return error as MotusError;
   }
 }
 
-export function createUnauthorizedError(message: string, details?: Record<string, any>): SocketIOTransportError {
-  return new SocketIOTransportError(ErrorCode.MOTUS_UNAUTHORIZED, message, 401, details);
+export function createUnauthorizedError(
+  message: string,
+  details?: Record<string, any>
+): SocketIOTransportError {
+  return new SocketIOTransportError(
+    ErrorCode.MOTUS_UNAUTHORIZED,
+    message,
+    401,
+    details
+  );
 }
 
-export function createInvalidArgumentError(message: string, details?: Record<string, any>): SocketIOTransportError {
-  return new SocketIOTransportError(ErrorCode.MOTUS_INVALID_ARGUMENT, message, 400, details);
+export function createInvalidArgumentError(
+  message: string,
+  details?: Record<string, any>
+): SocketIOTransportError {
+  return new SocketIOTransportError(
+    ErrorCode.MOTUS_INVALID_ARGUMENT,
+    message,
+    400,
+    details
+  );
 }
 
-export function createInternalError(message: string, details?: Record<string, any>, cause?: Error): SocketIOTransportError {
-  return new SocketIOTransportError(ErrorCode.MOTUS_INTERNAL_ERROR, message, 500, details, cause);
+export function createInternalError(
+  message: string,
+  details?: Record<string, any>,
+  cause?: Error
+): SocketIOTransportError {
+  return new SocketIOTransportError(
+    ErrorCode.MOTUS_INTERNAL_ERROR,
+    message,
+    500,
+    details,
+    cause
+  );
 }

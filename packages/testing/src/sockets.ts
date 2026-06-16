@@ -1,4 +1,4 @@
-import { io as clientIo, type Socket as ClientSocket } from 'socket.io-client';
+import { io as clientIo, type Socket as ClientSocket } from "socket.io-client";
 
 export interface SocketConnectionOptions {
   port: number;
@@ -11,21 +11,23 @@ export interface SocketConnectionOptions {
  * Creates and connects a Socket.IO client, returning a promise that resolves
  * when the socket connects, or rejects if a connection error occurs.
  */
-export function connectSocketClient(options: SocketConnectionOptions): Promise<ClientSocket> {
+export function connectSocketClient(
+  options: SocketConnectionOptions
+): Promise<ClientSocket> {
   const { port, token, tenantId, query = {} } = options;
   return new Promise((resolve, reject) => {
     const client = clientIo(`http://localhost:${port}`, {
       auth: { token, tenantId },
       query: { tenantId, ...query },
-      transports: ['websocket'],
+      transports: ["websocket"],
       forceNew: true,
     });
 
-    client.on('connect', () => {
+    client.on("connect", () => {
       resolve(client);
     });
 
-    client.on('connect_error', (err) => {
+    client.on("connect_error", (err) => {
       client.close();
       reject(err);
     });

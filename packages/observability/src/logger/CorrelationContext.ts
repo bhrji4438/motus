@@ -1,5 +1,5 @@
-import { AsyncLocalStorage } from 'async_hooks';
-import crypto from 'crypto';
+import { AsyncLocalStorage } from "async_hooks";
+import crypto from "crypto";
 
 export interface ICorrelationContext {
   correlationId: string;

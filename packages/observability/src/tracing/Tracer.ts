@@ -5,20 +5,23 @@ import {
   Span,
   SpanOptions,
   Context,
-} from '@opentelemetry/api';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
-import { Resource } from '@opentelemetry/resources';
-import { SEMRESATTRS_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
-import { ExporterFactory, ExporterConfig } from '@/exporters/index.js';
+} from "@opentelemetry/api";
+import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
+import { Resource } from "@opentelemetry/resources";
+import { SEMRESATTRS_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
+import { ExporterFactory, ExporterConfig } from "@/exporters/index.js";
 
 export class Tracer {
   private static provider?: NodeTracerProvider;
-  private static tracerName = 'motus-tracer';
+  private static tracerName = "motus-tracer";
 
   /**
    * Initialize OpenTelemetry Tracing Provider.
    */
-  public static initialize(serviceName: string, config: ExporterConfig = {}): void {
+  public static initialize(
+    serviceName: string,
+    config: ExporterConfig = {}
+  ): void {
     if (this.provider) return;
 
     this.provider = new NodeTracerProvider({
@@ -35,7 +38,11 @@ export class Tracer {
   /**
    * Start a new span and returns it.
    */
-  public static startSpan(name: string, options?: SpanOptions, context?: Context): Span {
+  public static startSpan(
+    name: string,
+    options?: SpanOptions,
+    context?: Context
+  ): Span {
     const tracer = trace.getTracer(this.tracerName);
     return tracer.startSpan(name, options, context);
   }
@@ -44,7 +51,7 @@ export class Tracer {
    * End a span.
    */
   public static endSpan(span: Span): void {
-    if (span && typeof span.end === 'function') {
+    if (span && typeof span.end === "function") {
       span.end();
     }
   }
@@ -68,7 +75,8 @@ export class Tracer {
         span.recordException(error);
         span.setStatus({
           code: 2, // Error
-          message: error.message || 'Error occurred during runWithSpan execution',
+          message:
+            error.message || "Error occurred during runWithSpan execution",
         });
         throw error;
       } finally {

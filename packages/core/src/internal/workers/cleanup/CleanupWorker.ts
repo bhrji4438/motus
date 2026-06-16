@@ -1,5 +1,8 @@
-import { TenantId, SessionId, SessionState } from '@motus/types';
-import { ISessionRepository, ILockManager } from '@/internal/interfaces/ports.js';
+import { TenantId, SessionId, SessionState } from "@motus/types";
+import {
+  ISessionRepository,
+  ILockManager,
+} from "@/internal/interfaces/ports.js";
 
 export class CleanupWorker {
   constructor(
@@ -7,7 +10,10 @@ export class CleanupWorker {
     private readonly lockMgr: ILockManager
   ) {}
 
-  public async pruneSessionData(tenantId: TenantId, sessionId: SessionId): Promise<void> {
+  public async pruneSessionData(
+    tenantId: TenantId,
+    sessionId: SessionId
+  ): Promise<void> {
     const lockKey = `lock:session:${sessionId}`;
     const acquired = await this.lockMgr.acquireLock(lockKey, 10);
     if (!acquired) {
@@ -21,7 +27,10 @@ export class CleanupWorker {
       }
 
       // Only prune completed or cancelled sessions (terminal states)
-      if (session.status === SessionState.COMPLETED || session.status === SessionState.CANCELLED) {
+      if (
+        session.status === SessionState.COMPLETED ||
+        session.status === SessionState.CANCELLED
+      ) {
         // Prune the telemetry stream or other cache indicators.
         // In this pure engine core, this delegates to repository/stream delete commands.
       }

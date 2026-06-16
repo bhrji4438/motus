@@ -1,1 +1,1 @@
-export * from '@/errors/error-contracts.js';
+export * from "@/errors/error-contracts.js";

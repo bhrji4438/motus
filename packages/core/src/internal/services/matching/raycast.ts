@@ -1,10 +1,13 @@
-import { Coordinates } from '@motus/types';
+import { Coordinates } from "@motus/types";
 
 /**
  * Validates whether a geographic point lies inside a boundary polygon using the Ray-casting algorithm.
  * The boundary should be represented as a list of Coordinate points.
  */
-export function isPointInPolygon(point: Coordinates, polygon: readonly Coordinates[]): boolean {
+export function isPointInPolygon(
+  point: Coordinates,
+  polygon: readonly Coordinates[]
+): boolean {
   if (polygon.length < 3) {
     return false;
   }

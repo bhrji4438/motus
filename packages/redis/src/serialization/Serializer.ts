@@ -15,7 +15,7 @@ import type {
   SessionId,
   DriverStatus,
   SessionState,
-} from '@motus/types';
+} from "@motus/types";
 
 // ─── Schema Version Constants ───────────────────────────────────────────────
 
@@ -41,19 +41,27 @@ export class RedisSchemaVersionError extends Error {
       `${entityType} schema version ${storedVersion} is newer than reader version ${readerVersion}. ` +
         `Deploy the latest @motus/redis package.`
     );
-    this.name = 'RedisSchemaVersionError';
+    this.name = "RedisSchemaVersionError";
   }
 }
 
 // ─── Helper utilities ────────────────────────────────────────────────────────
 
 function parseVersion(fields: Record<string, string>): number {
-  return parseInt(fields['_version'] ?? '0', 10);
+  return parseInt(fields["_version"] ?? "0", 10);
 }
 
-function guardVersion(entityType: string, storedVersion: number, currentVersion: number): void {
+function guardVersion(
+  entityType: string,
+  storedVersion: number,
+  currentVersion: number
+): void {
   if (storedVersion > currentVersion) {
-    throw new RedisSchemaVersionError(entityType, storedVersion, currentVersion);
+    throw new RedisSchemaVersionError(
+      entityType,
+      storedVersion,
+      currentVersion
+    );
   }
 }
 
@@ -83,26 +91,29 @@ export class TenantSerializer {
 
   static deserialize(fields: Record<string, string>): Tenant {
     const v = parseVersion(fields);
-    guardVersion('Tenant', v, TENANT_SCHEMA_VERSION);
+    guardVersion("Tenant", v, TENANT_SCHEMA_VERSION);
 
     return {
-      id: fields['id'] as TenantId,
-      name: fields['name'] ?? '',
-      matchingConfig: safeJSON<MatchingConfiguration>(fields['matchingConfig'], {
-        strategy: 'DISTANCE' as any,
-        maxSearchRadius: { value: 5000, unit: 'METERS' },
-        maxCandidatesPerWave: 5,
-      }),
-      fanoutConfig: safeJSON<FanoutConfiguration>(fields['fanoutConfig'], {
-        mode: 'PARALLEL',
+      id: fields["id"] as TenantId,
+      name: fields["name"] ?? "",
+      matchingConfig: safeJSON<MatchingConfiguration>(
+        fields["matchingConfig"],
+        {
+          strategy: "DISTANCE" as any,
+          maxSearchRadius: { value: 5000, unit: "METERS" },
+          maxCandidatesPerWave: 5,
+        }
+      ),
+      fanoutConfig: safeJSON<FanoutConfiguration>(fields["fanoutConfig"], {
+        mode: "PARALLEL",
         intervalSeconds: 5,
       }),
-      retryPolicy: safeJSON<RetryPolicy>(fields['retryPolicy'], {
+      retryPolicy: safeJSON<RetryPolicy>(fields["retryPolicy"], {
         maxWaves: 5,
         waveTimeoutSeconds: 30,
         reEvaluationDelaySeconds: 10,
       }),
-      zones: safeJSON<Zone[]>(fields['zones'], []),
+      zones: safeJSON<Zone[]>(fields["zones"], []),
     };
   }
 }
@@ -110,7 +121,9 @@ export class TenantSerializer {
 // ─── Driver Serializer ───────────────────────────────────────────────────────
 
 export class DriverSerializer {
-  static serialize(driver: Driver & { vehicleType?: string }): Record<string, string> {
+  static serialize(
+    driver: Driver & { vehicleType?: string }
+  ): Record<string, string> {
     const fields: Record<string, string> = {
       id: driver.id,
       tenantId: driver.tenantId,
@@ -121,50 +134,52 @@ export class DriverSerializer {
       currentLoad: String(driver.currentLoad),
       capacity: String(driver.capacity),
       lastHeartbeat: driver.lastHeartbeat,
-      vehicleType: driver.vehicleType ?? 'CAR',
+      vehicleType: driver.vehicleType ?? "CAR",
       _version: String(DRIVER_SCHEMA_VERSION),
     };
     const loc = driver.location as any;
     if (loc.bearing !== undefined) {
-      fields['bearing'] = String(loc.bearing);
+      fields["bearing"] = String(loc.bearing);
     }
     if (loc.speed !== undefined) {
-      fields['speed'] = String(loc.speed);
+      fields["speed"] = String(loc.speed);
     }
     if (loc.accuracy !== undefined) {
-      fields['accuracy'] = String(loc.accuracy);
+      fields["accuracy"] = String(loc.accuracy);
     }
     return fields;
   }
 
-  static deserialize(fields: Record<string, string>): Driver & { vehicleType: string } {
+  static deserialize(
+    fields: Record<string, string>
+  ): Driver & { vehicleType: string } {
     const v = parseVersion(fields);
-    guardVersion('Driver', v, DRIVER_SCHEMA_VERSION);
+    guardVersion("Driver", v, DRIVER_SCHEMA_VERSION);
 
     const location: Location = {
-      latitude: parseFloat(fields['latitude'] ?? '0'),
-      longitude: parseFloat(fields['longitude'] ?? '0'),
-      timestamp: fields['locationTimestamp'] ?? new Date().toISOString(),
+      latitude: parseFloat(fields["latitude"] ?? "0"),
+      longitude: parseFloat(fields["longitude"] ?? "0"),
+      timestamp: fields["locationTimestamp"] ?? new Date().toISOString(),
     };
-    if (fields['bearing'] !== undefined) {
-      (location as any).bearing = parseFloat(fields['bearing']);
+    if (fields["bearing"] !== undefined) {
+      (location as any).bearing = parseFloat(fields["bearing"]);
     }
-    if (fields['speed'] !== undefined) {
-      (location as any).speed = parseFloat(fields['speed']);
+    if (fields["speed"] !== undefined) {
+      (location as any).speed = parseFloat(fields["speed"]);
     }
-    if (fields['accuracy'] !== undefined) {
-      (location as any).accuracy = parseFloat(fields['accuracy']);
+    if (fields["accuracy"] !== undefined) {
+      (location as any).accuracy = parseFloat(fields["accuracy"]);
     }
 
     return {
-      id: fields['id'] as DriverId,
-      tenantId: fields['tenantId'] as TenantId,
-      status: (fields['status'] ?? 'OFFLINE') as DriverStatus,
+      id: fields["id"] as DriverId,
+      tenantId: fields["tenantId"] as TenantId,
+      status: (fields["status"] ?? "OFFLINE") as DriverStatus,
       location,
-      currentLoad: parseInt(fields['currentLoad'] ?? '0', 10),
-      capacity: parseInt(fields['capacity'] ?? '1', 10),
-      lastHeartbeat: fields['lastHeartbeat'] ?? new Date().toISOString(),
-      vehicleType: fields['vehicleType'] ?? 'CAR',
+      currentLoad: parseInt(fields["currentLoad"] ?? "0", 10),
+      capacity: parseInt(fields["capacity"] ?? "1", 10),
+      lastHeartbeat: fields["lastHeartbeat"] ?? new Date().toISOString(),
+      vehicleType: fields["vehicleType"] ?? "CAR",
     };
   }
 }
@@ -172,7 +187,9 @@ export class DriverSerializer {
 // ─── Session Serializer ──────────────────────────────────────────────────────
 
 export class SessionSerializer {
-  static serialize(session: Session & { requiredVehicleType?: string }): Record<string, string> {
+  static serialize(
+    session: Session & { requiredVehicleType?: string }
+  ): Record<string, string> {
     const fields: Record<string, string> = {
       id: session.id,
       tenantId: session.tenantId,
@@ -187,45 +204,49 @@ export class SessionSerializer {
       _version: String(SESSION_SCHEMA_VERSION),
     };
     if (session.assignedDriverId !== undefined) {
-      fields['assignedDriverId'] = session.assignedDriverId;
+      fields["assignedDriverId"] = session.assignedDriverId;
     }
     if (session.requiredVehicleType !== undefined) {
-      fields['requiredVehicleType'] = session.requiredVehicleType;
+      fields["requiredVehicleType"] = session.requiredVehicleType;
     }
     return fields;
   }
 
-  static deserialize(fields: Record<string, string>): Session & { requiredVehicleType?: string } {
+  static deserialize(
+    fields: Record<string, string>
+  ): Session & { requiredVehicleType?: string } {
     const v = parseVersion(fields);
-    guardVersion('Session', v, SESSION_SCHEMA_VERSION);
+    guardVersion("Session", v, SESSION_SCHEMA_VERSION);
 
     const pickupPoint: Location = {
-      latitude: parseFloat(fields['pickupLatitude'] ?? '0'),
-      longitude: parseFloat(fields['pickupLongitude'] ?? '0'),
-      timestamp: fields['pickupTimestamp'] ?? new Date().toISOString(),
+      latitude: parseFloat(fields["pickupLatitude"] ?? "0"),
+      longitude: parseFloat(fields["pickupLongitude"] ?? "0"),
+      timestamp: fields["pickupTimestamp"] ?? new Date().toISOString(),
     };
     const destinationPoint: Location = {
-      latitude: parseFloat(fields['destinationLatitude'] ?? '0'),
-      longitude: parseFloat(fields['destinationLongitude'] ?? '0'),
-      timestamp: fields['destinationTimestamp'] ?? new Date().toISOString(),
+      latitude: parseFloat(fields["destinationLatitude"] ?? "0"),
+      longitude: parseFloat(fields["destinationLongitude"] ?? "0"),
+      timestamp: fields["destinationTimestamp"] ?? new Date().toISOString(),
     };
-    const waves: DispatchWave[] = safeJSON<DispatchWave[]>(fields['waves'], []);
+    const waves: DispatchWave[] = safeJSON<DispatchWave[]>(fields["waves"], []);
 
     const session: Session & { requiredVehicleType?: string } = {
-      id: fields['id'] as SessionId,
-      tenantId: fields['tenantId'] as TenantId,
-      status: (fields['status'] ?? 'CREATED') as SessionState,
+      id: fields["id"] as SessionId,
+      tenantId: fields["tenantId"] as TenantId,
+      status: (fields["status"] ?? "CREATED") as SessionState,
       pickupPoint,
       destinationPoint,
       waves,
-      telemetryPath: [],   // hydrated from stream on demand
-      eventTimeline: [],   // hydrated from stream on demand
+      telemetryPath: [], // hydrated from stream on demand
+      eventTimeline: [], // hydrated from stream on demand
     };
-    if (fields['assignedDriverId']) {
-      (session as any).assignedDriverId = fields['assignedDriverId'] as DriverId;
+    if (fields["assignedDriverId"]) {
+      (session as any).assignedDriverId = fields[
+        "assignedDriverId"
+      ] as DriverId;
     }
-    if (fields['requiredVehicleType']) {
-      session.requiredVehicleType = fields['requiredVehicleType'];
+    if (fields["requiredVehicleType"]) {
+      session.requiredVehicleType = fields["requiredVehicleType"];
     }
     return session;
   }
@@ -241,24 +262,28 @@ export class TelemetrySerializer {
       timestamp: point.timestamp,
       _version: String(TELEMETRY_STREAM_VERSION),
     };
-    if (point.accuracy !== undefined) fields['accuracy'] = String(point.accuracy);
-    if (point.bearing !== undefined) fields['bearing'] = String(point.bearing);
-    if (point.speed !== undefined) fields['speed'] = String(point.speed);
+    if (point.accuracy !== undefined)
+      fields["accuracy"] = String(point.accuracy);
+    if (point.bearing !== undefined) fields["bearing"] = String(point.bearing);
+    if (point.speed !== undefined) fields["speed"] = String(point.speed);
     return fields;
   }
 
   static deserializeFromStream(fields: Record<string, string>): TelemetryPoint {
     const v = parseVersion(fields);
-    guardVersion('TelemetryStreamEntry', v, TELEMETRY_STREAM_VERSION);
+    guardVersion("TelemetryStreamEntry", v, TELEMETRY_STREAM_VERSION);
 
     const point: TelemetryPoint = {
-      latitude: parseFloat(fields['latitude'] ?? '0'),
-      longitude: parseFloat(fields['longitude'] ?? '0'),
-      timestamp: fields['timestamp'] ?? new Date().toISOString(),
+      latitude: parseFloat(fields["latitude"] ?? "0"),
+      longitude: parseFloat(fields["longitude"] ?? "0"),
+      timestamp: fields["timestamp"] ?? new Date().toISOString(),
     };
-    if (fields['accuracy'] !== undefined) (point as any).accuracy = parseFloat(fields['accuracy']);
-    if (fields['bearing'] !== undefined) (point as any).bearing = parseFloat(fields['bearing']);
-    if (fields['speed'] !== undefined) (point as any).speed = parseFloat(fields['speed']);
+    if (fields["accuracy"] !== undefined)
+      (point as any).accuracy = parseFloat(fields["accuracy"]);
+    if (fields["bearing"] !== undefined)
+      (point as any).bearing = parseFloat(fields["bearing"]);
+    if (fields["speed"] !== undefined)
+      (point as any).speed = parseFloat(fields["speed"]);
     return point;
   }
 }
@@ -278,13 +303,13 @@ export class EventStreamSerializer {
 
   static deserializeFromStream(fields: Record<string, string>): SessionEvent {
     const v = parseVersion(fields);
-    guardVersion('EventStreamEntry', v, EVENT_STREAM_VERSION);
+    guardVersion("EventStreamEntry", v, EVENT_STREAM_VERSION);
 
     return {
-      eventId: fields['eventId'] ?? '',
-      eventName: fields['eventName'] ?? '',
-      timestamp: fields['timestamp'] ?? new Date().toISOString(),
-      payload: safeJSON<Record<string, unknown>>(fields['payload'], {}),
+      eventId: fields["eventId"] ?? "",
+      eventName: fields["eventName"] ?? "",
+      timestamp: fields["timestamp"] ?? new Date().toISOString(),
+      payload: safeJSON<Record<string, unknown>>(fields["payload"], {}),
     };
   }
 }

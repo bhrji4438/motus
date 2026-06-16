@@ -5,7 +5,7 @@ export interface NotificationLog {
   title: string;
   body: string;
   provider: string;
-  status: 'sent' | 'failed' | 'scheduled';
+  status: "sent" | "failed" | "scheduled";
   error?: string;
   timestamp: string;
 }
@@ -15,24 +15,24 @@ export class NotificationMonitor {
 
   constructor() {
     this.logs.push({
-      messageId: 'fcm-msg-1',
-      tenantId: 'T1',
-      recipientId: 'driver-1',
-      title: 'Session Assigned',
-      body: 'Session S100 is assigned to you',
-      provider: 'fcm',
-      status: 'sent',
+      messageId: "fcm-msg-1",
+      tenantId: "T1",
+      recipientId: "driver-1",
+      title: "Session Assigned",
+      body: "Session S100 is assigned to you",
+      provider: "fcm",
+      status: "sent",
       timestamp: new Date().toISOString(),
     });
     this.logs.push({
-      messageId: 'apns-msg-2',
-      tenantId: 'T1',
-      recipientId: 'driver-2',
-      title: 'Dispatch Wave Started',
-      body: 'Session S101 has candidate positions',
-      provider: 'apns',
-      status: 'failed',
-      error: 'APNS device token expired',
+      messageId: "apns-msg-2",
+      tenantId: "T1",
+      recipientId: "driver-2",
+      title: "Dispatch Wave Started",
+      body: "Session S101 has candidate positions",
+      provider: "apns",
+      status: "failed",
+      error: "APNS device token expired",
       timestamp: new Date().toISOString(),
     });
   }
@@ -41,7 +41,7 @@ export class NotificationMonitor {
    * List logs for a given tenant context.
    */
   public async getLogs(tenantId: string): Promise<NotificationLog[]> {
-    return this.logs.filter(log => log.tenantId === tenantId);
+    return this.logs.filter((log) => log.tenantId === tenantId);
   }
 
   public recordDelivery(
@@ -50,7 +50,7 @@ export class NotificationMonitor {
     title: string,
     body: string,
     provider: string,
-    status: 'sent' | 'failed',
+    status: "sent" | "failed",
     error?: string
   ): void {
     const log: NotificationLog = {

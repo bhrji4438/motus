@@ -5,4 +5,4 @@ export {
   TelemetrySerializer,
   EventStreamSerializer,
   RedisSchemaVersionError,
-} from '@/serialization/Serializer.js';
+} from "@/serialization/Serializer.js";

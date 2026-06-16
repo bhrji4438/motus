@@ -13,9 +13,15 @@ export class TenantGuard {
    * @throws {Error} if tenantId is invalid or contains injection characters.
    */
   static validate(tenantId: string): void {
-    if (!tenantId || typeof tenantId !== 'string' || tenantId.trim().length === 0) {
+    if (
+      !tenantId ||
+      typeof tenantId !== "string" ||
+      tenantId.trim().length === 0
+    ) {
       throw new Error(
-        `TenantGuard: tenantId must be a non-empty string. Received: ${JSON.stringify(tenantId)}`
+        `TenantGuard: tenantId must be a non-empty string. Received: ${JSON.stringify(
+          tenantId
+        )}`
       );
     }
     if (this.INVALID_CHARS.test(tenantId)) {
@@ -31,7 +37,11 @@ export class TenantGuard {
    * @throws {Error} if driverId is invalid.
    */
   static validateDriverId(driverId: string): void {
-    if (!driverId || typeof driverId !== 'string' || driverId.trim().length === 0) {
+    if (
+      !driverId ||
+      typeof driverId !== "string" ||
+      driverId.trim().length === 0
+    ) {
       throw new Error(`TenantGuard: driverId must be a non-empty string.`);
     }
   }
@@ -41,7 +51,11 @@ export class TenantGuard {
    * @throws {Error} if sessionId is invalid.
    */
   static validateSessionId(sessionId: string): void {
-    if (!sessionId || typeof sessionId !== 'string' || sessionId.trim().length === 0) {
+    if (
+      !sessionId ||
+      typeof sessionId !== "string" ||
+      sessionId.trim().length === 0
+    ) {
       throw new Error(`TenantGuard: sessionId must be a non-empty string.`);
     }
   }

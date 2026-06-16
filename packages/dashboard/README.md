@@ -1,43 +1,75 @@
 # @motus/dashboard
 
-Operational control room, system health monitoring, and sessions analysis console package for Motus.
+Operational telemetry, dashboard server, and real-time dashboard UI for the Motus platform.
 
-## Features
+---
 
-- **6-Tier Role-Based Access Control (RBAC)**: Secure routes matching users to specific roles (`Super Admin`, `Admin`, `Dispatcher`, `Support`, `Analyst`, `Viewer`).
-- **Distributed Trace Waterfall Visualizer**: Reusable client widget mapping OpenTelemetry span records into timing waterfall bars.
-- **Dedicated Operational APIs**: Retrieve system analytics, session histories, driver presence location, notifications logs, and queue backlog stats.
-- **SSE & WebSocket Real-time updates**: Stream telemetry coordinates using a unified transport channel with automatic fallbacks.
-- **Custom Visual Map**: Lightweight HTML5 Canvas component plotting pickups, destinations, and active path lines.
-- **CSV Reports Generation**: Export structured audit log reports directly to CSV.
-- **Glassmorphic UI Design**: Premium UI styled with Vanilla CSS, featuring responsive grids and fluid animations.
+## 1. Purpose
 
-## Structure
+Provides REST APIs, Server-Sent Events (SSE) streams, and a React-based visual frontend to monitor drivers, sessions, active queues, and telemetry logs in real time.
 
-- `src/api/`: Backend controller layers for analytics, audits, sessions, and queues.
-- `src/auth/`: RbacGuard enforcing tenant and route access boundaries.
-- `src/realtime/`: Real-time Server-Sent Events (SSE) and WebSocket brokers.
-- `src/ui/`: Client React SPA built and optimized using Vite.
+---
 
-## Setup
+## 2. Installation
 
-### 1. Register Fastify Server Plugin
-```typescript
-import fastify from 'fastify';
-import { dashboardPlugin } from '@motus/dashboard';
-
-const app = fastify();
-await app.register(dashboardPlugin);
-await app.listen({ port: 4000 });
+```bash
+npm install @motus/dashboard
 ```
 
-### 2. Client Telemetry Connection
-```typescript
-import { RealtimeClient } from '@motus/dashboard/ui';
+---
 
-const client = new RealtimeClient('tenant-1');
-client.on('driver.moved', (data) => {
-  console.log('Driver moved to:', data.location);
-});
-client.connect();
+## 3. Quick Start
+
+```typescript
+import { FastifyInstance } from "fastify";
+import { dashboardPlugin } from "@motus/dashboard";
+
+// Mount plugin on your Fastify server instance
+fastify.register(dashboardPlugin);
 ```
+
+---
+
+## 4. Configuration
+
+Requires environment authentication configuration flags and role permissions parameters. Define endpoints inside standard web client settings.
+
+---
+
+## 5. Common Use Cases
+
+- Displaying active drivers on a live map widget.
+- Inspecting active session telemetry histories.
+- Monitoring system queues and latency rates.
+- Exporting tenant audit logs to CSV format.
+
+---
+
+## 6. API Reference Link
+
+- [API Reference: @motus/core](../../docs/api-reference/core.md)
+
+---
+
+## 7. Related Modules
+
+- `@motus/core` — Domain handlers and manager facades.
+- `@motus/observability` — Diagnostic logs.
+
+---
+
+## 8. Production Notes
+
+Enable administrative authorization middlewares and enforce strict HTTPS/WSS requirements when deploying the dashboard plugin in production.
+
+---
+
+## 9. Limitations
+
+Designed primarily for operational diagnostics and monitoring; it does not replace external analytics databases (such as Snowflake or BigQuery) for long-term storage or reports.
+
+---
+
+## 10. Examples
+
+Detailed route endpoints and SSE specifications can be found in the [Audit Logging Module Page](../../docs/modules/audit-logging.md).

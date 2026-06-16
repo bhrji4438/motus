@@ -1,4 +1,4 @@
-import { ErrorCode } from '@/domain/enums.js';
+import { ErrorCode } from "@/domain/enums.js";
 
 /**
  * Standardized, transport-independent contract representing errors

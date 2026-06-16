@@ -1,13 +1,13 @@
-import { SpanKind } from '@opentelemetry/api';
-import { Tracer } from '@/tracing/Tracer.js';
-import { ErrorTracker } from '@/errors/ErrorTracker.js';
-import { defaultRegistry } from '@/metrics/MetricRegistry.js';
+import { SpanKind } from "@opentelemetry/api";
+import { Tracer } from "@/tracing/Tracer.js";
+import { ErrorTracker } from "@/errors/ErrorTracker.js";
+import { defaultRegistry } from "@/metrics/MetricRegistry.js";
 
 export class EventInstrumenter {
   private static eventDurationHistogram = defaultRegistry.histogram({
-    name: 'motus_event_duration_seconds',
-    help: 'Processing duration of event bus handlers in seconds',
-    labelNames: ['eventName', 'action', 'status'],
+    name: "motus_event_duration_seconds",
+    help: "Processing duration of event bus handlers in seconds",
+    labelNames: ["eventName", "action", "status"],
   });
 
   /**
@@ -24,10 +24,12 @@ export class EventInstrumenter {
     return Tracer.runWithSpan(
       spanName,
       async (span) => {
-        span.setAttribute('event.name', eventName);
-        span.setAttribute('event.action', 'publish');
-        if (eventPayload.tenantId) span.setAttribute('tenantId', eventPayload.tenantId);
-        if (eventPayload.sessionId) span.setAttribute('sessionId', eventPayload.sessionId);
+        span.setAttribute("event.name", eventName);
+        span.setAttribute("event.action", "publish");
+        if (eventPayload.tenantId)
+          span.setAttribute("tenantId", eventPayload.tenantId);
+        if (eventPayload.sessionId)
+          span.setAttribute("sessionId", eventPayload.sessionId);
 
         // Inject active context
         const carrier: Record<string, any> = {};
@@ -35,14 +37,18 @@ export class EventInstrumenter {
 
         try {
           const result = await publishFn(carrier);
-          this.recordDuration(eventName, 'publish', startTime, 'success');
+          this.recordDuration(eventName, "publish", startTime, "success");
           return result;
         } catch (error: any) {
-          this.recordDuration(eventName, 'publish', startTime, 'error');
-          ErrorTracker.captureException(error, `Event publish failed for ${eventName}`, {
-            eventName,
-            ...eventPayload,
-          });
+          this.recordDuration(eventName, "publish", startTime, "error");
+          ErrorTracker.captureException(
+            error,
+            `Event publish failed for ${eventName}`,
+            {
+              eventName,
+              ...eventPayload,
+            }
+          );
           throw error;
         }
       },
@@ -66,21 +72,27 @@ export class EventInstrumenter {
     return Tracer.runWithSpan(
       spanName,
       async (span) => {
-        span.setAttribute('event.name', eventName);
-        span.setAttribute('event.action', 'subscribe');
-        if (eventPayload.tenantId) span.setAttribute('tenantId', eventPayload.tenantId);
-        if (eventPayload.sessionId) span.setAttribute('sessionId', eventPayload.sessionId);
+        span.setAttribute("event.name", eventName);
+        span.setAttribute("event.action", "subscribe");
+        if (eventPayload.tenantId)
+          span.setAttribute("tenantId", eventPayload.tenantId);
+        if (eventPayload.sessionId)
+          span.setAttribute("sessionId", eventPayload.sessionId);
 
         try {
           const result = await consumeFn();
-          this.recordDuration(eventName, 'subscribe', startTime, 'success');
+          this.recordDuration(eventName, "subscribe", startTime, "success");
           return result;
         } catch (error: any) {
-          this.recordDuration(eventName, 'subscribe', startTime, 'error');
-          ErrorTracker.captureException(error, `Event subscription handler failed for ${eventName}`, {
-            eventName,
-            ...eventPayload,
-          });
+          this.recordDuration(eventName, "subscribe", startTime, "error");
+          ErrorTracker.captureException(
+            error,
+            `Event subscription handler failed for ${eventName}`,
+            {
+              eventName,
+              ...eventPayload,
+            }
+          );
           throw error;
         }
       },
@@ -91,7 +103,7 @@ export class EventInstrumenter {
 
   private static recordDuration(
     eventName: string,
-    action: 'publish' | 'subscribe',
+    action: "publish" | "subscribe",
     startTime: [number, number],
     status: string
   ): void {

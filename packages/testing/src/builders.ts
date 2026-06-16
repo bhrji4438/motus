@@ -7,7 +7,7 @@ export interface MockLocation {
 export interface MockDriver {
   id: string;
   tenantId: string;
-  status: 'OFFLINE' | 'AVAILABLE' | 'BUSY' | 'STALE';
+  status: "OFFLINE" | "AVAILABLE" | "BUSY" | "STALE";
   location: MockLocation;
   capabilities: string[];
 }
@@ -24,7 +24,15 @@ export interface MockTrip {
   tenantId: string;
   riderId: string;
   driverId?: string;
-  status: 'REQUESTED' | 'ASSIGNING' | 'ACCEPTED' | 'EN_ROUTE' | 'ARRIVED' | 'STARTED' | 'COMPLETED' | 'CANCELLED';
+  status:
+    | "REQUESTED"
+    | "ASSIGNING"
+    | "ACCEPTED"
+    | "EN_ROUTE"
+    | "ARRIVED"
+    | "STARTED"
+    | "COMPLETED"
+    | "CANCELLED";
   pickup: { latitude: number; longitude: number; address: string };
   destination: { latitude: number; longitude: number; address: string };
   createdAt: number;
@@ -32,15 +40,15 @@ export interface MockTrip {
 
 export class DriverBuilder {
   private driver: MockDriver = {
-    id: 'driver-123',
-    tenantId: 'tenant-default',
-    status: 'AVAILABLE',
+    id: "driver-123",
+    tenantId: "tenant-default",
+    status: "AVAILABLE",
     location: {
       latitude: 37.7749,
       longitude: -122.4194,
       timestamp: Date.now(),
     },
-    capabilities: ['sedan', 'vip'],
+    capabilities: ["sedan", "vip"],
   };
 
   public withId(id: string): this {
@@ -53,7 +61,7 @@ export class DriverBuilder {
     return this;
   }
 
-  public withStatus(status: MockDriver['status']): this {
+  public withStatus(status: MockDriver["status"]): this {
     this.driver.status = status;
     return this;
   }
@@ -79,9 +87,9 @@ export class DriverBuilder {
 
 export class RiderBuilder {
   private rider: MockRider = {
-    id: 'rider-123',
-    tenantId: 'tenant-default',
-    name: 'Jane Doe',
+    id: "rider-123",
+    tenantId: "tenant-default",
+    name: "Jane Doe",
     rating: 4.9,
   };
 
@@ -107,12 +115,16 @@ export class RiderBuilder {
 
 export class TripBuilder {
   private trip: MockTrip = {
-    id: 'trip-123',
-    tenantId: 'tenant-default',
-    riderId: 'rider-123',
-    status: 'REQUESTED',
-    pickup: { latitude: 37.7749, longitude: -122.4194, address: 'Market St' },
-    destination: { latitude: 37.7849, longitude: -122.4094, address: 'Union Square' },
+    id: "trip-123",
+    tenantId: "tenant-default",
+    riderId: "rider-123",
+    status: "REQUESTED",
+    pickup: { latitude: 37.7749, longitude: -122.4194, address: "Market St" },
+    destination: {
+      latitude: 37.7849,
+      longitude: -122.4094,
+      address: "Union Square",
+    },
     createdAt: Date.now(),
   };
 
@@ -136,14 +148,25 @@ export class TripBuilder {
     return this;
   }
 
-  public withStatus(status: MockTrip['status']): this {
+  public withStatus(status: MockTrip["status"]): this {
     this.trip.status = status;
     return this;
   }
 
-  public withLocations(pickup: { lat: number; lng: number }, dest: { lat: number; lng: number }): this {
-    this.trip.pickup = { ...this.trip.pickup, latitude: pickup.lat, longitude: pickup.lng };
-    this.trip.destination = { ...this.trip.destination, latitude: dest.lat, longitude: dest.lng };
+  public withLocations(
+    pickup: { lat: number; lng: number },
+    dest: { lat: number; lng: number }
+  ): this {
+    this.trip.pickup = {
+      ...this.trip.pickup,
+      latitude: pickup.lat,
+      longitude: pickup.lng,
+    };
+    this.trip.destination = {
+      ...this.trip.destination,
+      latitude: dest.lat,
+      longitude: dest.lng,
+    };
     return this;
   }
 

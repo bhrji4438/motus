@@ -1,14 +1,14 @@
-import { randomUUID } from 'crypto';
-import type { ILockManager } from '@motus/core';
-import type { RedisClient } from '@/client/RedisClientManager.js';
-import { KeyFactory } from '@/keys/KeyFactory.js';
-import type { RedisLockConfig } from '@/config/index.js';
-import { DEFAULT_LOCK_CONFIG } from '@/config/index.js';
+import { randomUUID } from "crypto";
+import type { ILockManager } from "@motus/core";
+import type { RedisClient } from "@/client/RedisClientManager.js";
+import { KeyFactory } from "@/keys/KeyFactory.js";
+import type { RedisLockConfig } from "@/config/index.js";
+import { DEFAULT_LOCK_CONFIG } from "@/config/index.js";
 import {
   resolveObservability,
   withObservability,
   type RedisObservabilityDeps,
-} from '@/observability/RedisObservability.js';
+} from "@/observability/RedisObservability.js";
 
 export interface LockHandle {
   key: string;
@@ -51,9 +51,10 @@ export class RedisLockManager implements ILockManager {
    */
   async acquireLock(key: string, ttlSeconds?: number): Promise<boolean> {
     const lockKey = KeyFactory.lock(key);
-    const ttlMs = ttlSeconds !== undefined
-      ? ttlSeconds * 1000
-      : this.lockConfig.defaultLockTtlMs;
+    const ttlMs =
+      ttlSeconds !== undefined
+        ? ttlSeconds * 1000
+        : this.lockConfig.defaultLockTtlMs;
     return this.attemptAcquire(lockKey, ttlMs);
   }
 
@@ -63,9 +64,13 @@ export class RedisLockManager implements ILockManager {
    */
   async releaseLock(key: string): Promise<void> {
     const lockKey = KeyFactory.lock(key);
-    await withObservability(this.obs, 'RedisLockManager.releaseLock', async () => {
-      await (this.client as any).del(lockKey);
-    });
+    await withObservability(
+      this.obs,
+      "RedisLockManager.releaseLock",
+      async () => {
+        await (this.client as any).del(lockKey);
+      }
+    );
   }
 
   /**
@@ -80,25 +85,47 @@ export class RedisLockManager implements ILockManager {
     const resolvedTtl = ttlMs ?? this.lockConfig.defaultLockTtlMs;
     const ownerToken = randomUUID();
 
-    for (let attempt = 1; attempt <= this.lockConfig.retryMaxAttempts; attempt++) {
-      const acquired = await this.attemptAcquireWithToken(key, ownerToken, resolvedTtl);
+    for (
+      let attempt = 1;
+      attempt <= this.lockConfig.retryMaxAttempts;
+      attempt++
+    ) {
+      const acquired = await this.attemptAcquireWithToken(
+        key,
+        ownerToken,
+        resolvedTtl
+      );
       if (acquired) {
         this.obs.metrics.incrementLockAcquisition(key);
-        this.obs.logger.debug(`Lock acquired`, { key, ownerToken, ttlMs: resolvedTtl, attempt });
+        this.obs.logger.debug(`Lock acquired`, {
+          key,
+          ownerToken,
+          ttlMs: resolvedTtl,
+          attempt,
+        });
         return { key, ownerToken, ttlMs: resolvedTtl };
       }
 
       this.obs.metrics.incrementLockContention(key);
-      this.obs.logger.debug(`Lock contention`, { key, attempt, maxAttempts: this.lockConfig.retryMaxAttempts });
+      this.obs.logger.debug(`Lock contention`, {
+        key,
+        attempt,
+        maxAttempts: this.lockConfig.retryMaxAttempts,
+      });
 
       if (attempt < this.lockConfig.retryMaxAttempts) {
-        const delay = this.lockConfig.retryDelayMs * Math.pow(this.lockConfig.retryBackoffFactor, attempt - 1)
-          + Math.random() * this.lockConfig.retryJitterMs;
-        await new Promise(r => setTimeout(r, Math.round(delay)));
+        const delay =
+          this.lockConfig.retryDelayMs *
+            Math.pow(this.lockConfig.retryBackoffFactor, attempt - 1) +
+          Math.random() * this.lockConfig.retryJitterMs;
+        await new Promise((r) => setTimeout(r, Math.round(delay)));
       }
     }
 
-    this.obs.logger.warn(`Lock acquisition failed after ${this.lockConfig.retryMaxAttempts} attempts`, { key });
+    this.obs.logger.warn(
+      `Lock acquisition failed after ${this.lockConfig.retryMaxAttempts} attempts`,
+      { key }
+    );
     return null;
   }
 
@@ -107,19 +134,27 @@ export class RedisLockManager implements ILockManager {
     if (handle.renewalIntervalId) {
       clearInterval(handle.renewalIntervalId);
     }
-    await withObservability(this.obs, 'RedisLockManager.releaseLockHandle', async () => {
-      const result = await (this.client as any).motusReleaseLock(
-        handle.key, handle.ownerToken
-      ) as number;
-      if (result === 0) {
-        this.obs.logger.warn(`Lock release failed: owner mismatch or expired`, {
-          key: handle.key,
-          ownerToken: handle.ownerToken,
-        });
-      } else {
-        this.obs.logger.debug(`Lock released`, { key: handle.key });
+    await withObservability(
+      this.obs,
+      "RedisLockManager.releaseLockHandle",
+      async () => {
+        const result = (await (this.client as any).motusReleaseLock(
+          handle.key,
+          handle.ownerToken
+        )) as number;
+        if (result === 0) {
+          this.obs.logger.warn(
+            `Lock release failed: owner mismatch or expired`,
+            {
+              key: handle.key,
+              ownerToken: handle.ownerToken,
+            }
+          );
+        } else {
+          this.obs.logger.debug(`Lock released`, { key: handle.key });
+        }
       }
-    });
+    );
   }
 
   /**
@@ -128,22 +163,35 @@ export class RedisLockManager implements ILockManager {
    * Call releaseLockHandle to stop renewal and release.
    */
   startRenewal(handle: LockHandle): void {
-    const renewalIntervalMs = Math.floor(handle.ttlMs * this.lockConfig.renewalThreshold);
+    const renewalIntervalMs = Math.floor(
+      handle.ttlMs * this.lockConfig.renewalThreshold
+    );
     handle.renewalIntervalId = setInterval(async () => {
       try {
-        const result = await (this.client as any).motusRenewLock(
-          handle.key, handle.ownerToken, handle.ttlMs
-        ) as number;
+        const result = (await (this.client as any).motusRenewLock(
+          handle.key,
+          handle.ownerToken,
+          handle.ttlMs
+        )) as number;
         if (result === 0) {
-          this.obs.logger.warn(`Lock renewal failed: token mismatch or expired`, {
-            key: handle.key,
-          });
+          this.obs.logger.warn(
+            `Lock renewal failed: token mismatch or expired`,
+            {
+              key: handle.key,
+            }
+          );
           clearInterval(handle.renewalIntervalId);
         } else {
-          this.obs.logger.debug(`Lock renewed`, { key: handle.key, ttlMs: handle.ttlMs });
+          this.obs.logger.debug(`Lock renewed`, {
+            key: handle.key,
+            ttlMs: handle.ttlMs,
+          });
         }
       } catch (err) {
-        this.obs.logger.error(`Lock renewal error`, { key: handle.key, error: err });
+        this.obs.logger.error(`Lock renewal error`, {
+          key: handle.key,
+          error: err,
+        });
         clearInterval(handle.renewalIntervalId);
       }
     }, renewalIntervalMs);
@@ -156,12 +204,22 @@ export class RedisLockManager implements ILockManager {
     return this.attemptAcquireWithToken(key, ownerToken, ttlMs);
   }
 
-  private async attemptAcquireWithToken(key: string, ownerToken: string, ttlMs: number): Promise<boolean> {
-    return withObservability(this.obs, 'RedisLockManager.attemptAcquire', async () => {
-      const result = await (this.client as any).motusAcquireLock(
-        key, ownerToken, String(ttlMs)
-      ) as number;
-      return result === 1;
-    });
+  private async attemptAcquireWithToken(
+    key: string,
+    ownerToken: string,
+    ttlMs: number
+  ): Promise<boolean> {
+    return withObservability(
+      this.obs,
+      "RedisLockManager.attemptAcquire",
+      async () => {
+        const result = (await (this.client as any).motusAcquireLock(
+          key,
+          ownerToken,
+          String(ttlMs)
+        )) as number;
+        return result === 1;
+      }
+    );
   }
 }

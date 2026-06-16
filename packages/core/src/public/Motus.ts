@@ -1,13 +1,13 @@
-import { MotusSDKClient } from '@motus/types';
-import { TenantNamespace } from '@/public/TenantNamespace.js';
-import { DriverNamespace } from '@/public/DriverNamespace.js';
-import { SessionNamespace } from '@/public/SessionNamespace.js';
-import { QueryNamespace } from '@/public/QueryNamespace.js';
-import { EventNamespace } from '@/public/EventNamespace.js';
-import { TenantManager } from '@/internal/managers/TenantManager.js';
-import { DriverManager } from '@/internal/managers/DriverManager.js';
-import { SessionManager } from '@/internal/managers/SessionManager.js';
-import { IClock } from '@/internal/interfaces/ports.js';
+import { MotusSDKClient } from "@motus/types";
+import { TenantNamespace } from "@/public/TenantNamespace.js";
+import { DriverNamespace } from "@/public/DriverNamespace.js";
+import { SessionNamespace } from "@/public/SessionNamespace.js";
+import { QueryNamespace } from "@/public/QueryNamespace.js";
+import { EventNamespace } from "@/public/EventNamespace.js";
+import { TenantManager } from "@/internal/managers/TenantManager.js";
+import { DriverManager } from "@/internal/managers/DriverManager.js";
+import { SessionManager } from "@/internal/managers/SessionManager.js";
+import { IClock } from "@/internal/interfaces/ports.js";
 
 export class Motus implements MotusSDKClient {
   public readonly tenant: TenantNamespace;

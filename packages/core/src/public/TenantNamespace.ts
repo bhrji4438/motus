@@ -3,19 +3,23 @@ import {
   RegisterTenantCommand,
   UpdateTenantCommand,
   TenantResult,
-  TenantId
-} from '@motus/types';
-import { TenantManager } from '@/internal/managers/TenantManager.js';
+  TenantId,
+} from "@motus/types";
+import { TenantManager } from "@/internal/managers/TenantManager.js";
 
 export class TenantNamespace implements ITenantNamespace {
   constructor(private readonly tenantMgr: TenantManager) {}
 
-  public async registerTenant(command: RegisterTenantCommand): Promise<TenantResult> {
+  public async registerTenant(
+    command: RegisterTenantCommand
+  ): Promise<TenantResult> {
     const tenant = await this.tenantMgr.registerTenant(command);
     return this.mapTenantToResult(tenant);
   }
 
-  public async updateTenant(command: UpdateTenantCommand): Promise<TenantResult> {
+  public async updateTenant(
+    command: UpdateTenantCommand
+  ): Promise<TenantResult> {
     const tenant = await this.tenantMgr.updateTenant(command);
     return this.mapTenantToResult(tenant);
   }
@@ -35,8 +39,8 @@ export class TenantNamespace implements ITenantNamespace {
       maxCapacityPerDriver: tenant.matchingConfig.maxCandidatesPerWave,
       geofences: (tenant.zones || []).map((z: any) => ({
         name: z.name,
-        boundary: z.boundary
-      }))
+        boundary: z.boundary,
+      })),
     };
   }
 }

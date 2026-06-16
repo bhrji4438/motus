@@ -1,48 +1,73 @@
 # @motus/observability
 
-Production-grade observability infrastructure package for the Motus platform. Provides OpenTelemetry integrations, structured logging, Prometheus metrics, diagnostics, error tracking, and request/resource lifecycle instrumentation.
+Logging, metrics collection, tracing, and health check diagnostics.
 
-## Features
+---
 
-- **OpenTelemetry Distributed Tracing**: Track execution scopes across service and network barriers (conforming to W3C `traceparent` context propagation).
-- **Structured JSON Logging**: Wraps `pino` with automatic context inheritance (correlation ID, tenant context, and session ID) via `AsyncLocalStorage`.
-- **Prometheus Metrics**: Register and export performance indicators (counters, gauges, histograms) using a custom `MetricRegistry`.
-- **Error Tracking**: Global hooks to attach exception logs, inject tracing tags, and execute third-party captures (e.g. Sentry/Rollbar).
-- **Generic Resource Instrumentation**: Adapter-based wrappers to trace database calls (`database.ts`), queues/streams (`queue.ts`), and local events (`events.ts`).
-- **HTTP Lifecycle Instrumentation**: Built-in middleware for Fastify and Express to parse correlation headers and trace server request durations.
-- **Diagnostics**: Health Check registry verifying memory/CPU metrics and downstream resource availability.
+## 1. Purpose
 
-## Usage
+Provides OpenTelemetry spans, metrics, log correlations, diagnostics, and hooks to monitor the Motus platform in production.
 
-### 1. Initialization
-```typescript
-import { Tracer } from '@motus/observability';
+---
 
-Tracer.initialize('my-service', {
-  tracesExporter: 'otlp',
-  metricsExporter: 'prometheus',
-  otlpEndpoint: 'http://collector:4318/v1/traces'
-});
+## 2. Installation
+
+```bash
+npm install @motus/observability
 ```
 
-### 2. Structured Context Logging
-```typescript
-import { logger, CorrelationContext } from '@motus/observability';
+---
 
-// Correlation ID is propagated automatically
-CorrelationContext.run({ correlationId: 'req-123', tenantId: 'tenant-usa' }, () => {
-  logger.info('Processing driver matching request');
-  // Logs: {"level":"INFO","time":"...","correlationId":"req-123","tenantId":"tenant-usa","msg":"Processing..."}
-});
+## 3. Quick Start
+
+```typescript
+import { logger } from "@motus/observability";
+
+logger.info("Starting Motus application...");
 ```
 
-### 3. Database Operation Tracing
-```typescript
-import { DatabaseInstrumenter } from '@motus/observability';
+---
 
-const dbTelemetry = new DatabaseInstrumenter({ dbSystem: 'redis', dbName: 'presence-store' });
+## 4. Configuration
 
-const value = await dbTelemetry.traceCall('getDriverState', async () => {
-  return redisClient.get('driver-101');
-});
-```
+Exposes logging levels (`LOG_LEVEL=info`) and exporters (`ExporterConfig`). Hooks into Fastify and Express servers using middleware wrappers.
+
+---
+
+## 5. Common Use Cases
+
+- Tracing transactions across microservices using correlation contexts.
+- Tracking API request counts and latency counters.
+- Registering and checking database health diagnostics.
+- Logging structured warnings and errors.
+
+---
+
+## 6. API Reference Link
+
+- [API Reference: @motus/observability](../../docs/api-reference/observability.md)
+
+---
+
+## 7. Related Modules
+
+- `@motus/core` — Domain handlers and managers instrumentation.
+- `@motus/types` — Metric config variables.
+
+---
+
+## 8. Production Notes
+
+Configure trace sampling configurations in production environments to limit performance overhead.
+
+---
+
+## 9. Limitations
+
+Metrics are cached locally in-memory; Prometheus engines must query the scrape endpoints to aggregate cluster-wide metrics.
+
+---
+
+## 10. Examples
+
+Detailed examples for registering custom health probes can be found in the [Observability Module Page](../../docs/modules/observability.md).

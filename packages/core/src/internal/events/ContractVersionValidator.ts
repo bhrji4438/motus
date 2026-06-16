@@ -5,8 +5,8 @@ export class ContractVersionValidator {
    * Major version must match exactly.
    */
   public isCompatible(eventVersion: string, expectedVersion: string): boolean {
-    const evParts = eventVersion.split('.');
-    const exParts = expectedVersion.split('.');
+    const evParts = eventVersion.split(".");
+    const exParts = expectedVersion.split(".");
 
     if (evParts.length !== 3 || exParts.length !== 3) {
       return false;

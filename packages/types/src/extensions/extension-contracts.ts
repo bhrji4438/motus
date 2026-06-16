@@ -1,6 +1,6 @@
-import { Session, Driver, Zone } from '@/domain/models.js';
-import { Coordinates, Duration } from '@/domain/value-objects.js';
-import { MotusEvent } from '@/events/events.js';
+import { Session, Driver, Zone } from "@/domain/models.js";
+import { Coordinates, Duration } from "@/domain/value-objects.js";
+import { MotusEvent } from "@/events/events.js";
 
 /**
  * Represents candidate driver ranking score.
@@ -41,7 +41,10 @@ export interface EtaProvider {
   /**
    * Calculates estimated transit time and distance between coordinates.
    */
-  calculateEta(origin: Coordinates, destination: Coordinates): EtaResult | Promise<EtaResult>;
+  calculateEta(
+    origin: Coordinates,
+    destination: Coordinates
+  ): EtaResult | Promise<EtaResult>;
 }
 
 /**

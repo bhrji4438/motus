@@ -1,7 +1,7 @@
-import { SessionId, Coordinates } from '@motus/types';
-import { EventRouter } from '@/routing/EventRouter.js';
-import { TransportAdapter } from '@/transport/TransportAdapter.js';
-import { RoomManager } from '@/managers/RoomManager.js';
+import { SessionId, Coordinates } from "@motus/types";
+import { EventRouter } from "@/routing/EventRouter.js";
+import { TransportAdapter } from "@/transport/TransportAdapter.js";
+import { RoomManager } from "@/managers/RoomManager.js";
 
 export class TrackingGateway {
   // session ID -> last broadcast timestamp
@@ -14,15 +14,15 @@ export class TrackingGateway {
     private readonly roomManager: RoomManager,
     private readonly eventRouter: EventRouter,
     private readonly minDistanceMeters: number = 2.0, // 2-meter decimation
-    private readonly minIntervalMs: number = 1000,    // 1Hz throttling
-    private readonly forceIntervalMs: number = 10000   // Force update every 10s regardless of distance
+    private readonly minIntervalMs: number = 1000, // 1Hz throttling
+    private readonly forceIntervalMs: number = 10000 // Force update every 10s regardless of distance
   ) {}
 
   /**
    * Binds incoming session tracking events.
    */
   public bindSocketEvents(socketId: string, socket: any): void {
-    const events = ['tracking:subscribe', 'tracking:unsubscribe'];
+    const events = ["tracking:subscribe", "tracking:unsubscribe"];
 
     for (const event of events) {
       socket.on(event, async (payload: any) => {
@@ -35,12 +35,15 @@ export class TrackingGateway {
    * Outbound: Streams high-frequency coordinate/telemetry updates to the tracking room.
    * Optimizes CPU/bandwidth using temporal rate-limiting and spatial decimation.
    */
-  public broadcastTrackingUpdate(sessionId: SessionId, payload: {
-    location: Coordinates;
-    speed?: number;
-    bearing?: number;
-    timestamp: string;
-  }): boolean {
+  public broadcastTrackingUpdate(
+    sessionId: SessionId,
+    payload: {
+      location: Coordinates;
+      speed?: number;
+      bearing?: number;
+      timestamp: string;
+    }
+  ): boolean {
     const now = Date.now();
     const lastTime = this.lastBroadcastTime.get(sessionId) ?? 0;
     const elapsed = now - lastTime;
@@ -68,7 +71,7 @@ export class TrackingGateway {
 
     // 3. Execute Broadcast
     const room = this.roomManager.trackingRoom(sessionId);
-    this.transport.broadcast(room, 'tracking:update', payload);
+    this.transport.broadcast(room, "tracking:update", payload);
 
     // Save states
     this.lastBroadcastTime.set(sessionId, now);
@@ -81,7 +84,12 @@ export class TrackingGateway {
     this.lastCoordinates.delete(sessionId);
   }
 
-  private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  private calculateDistance(
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number
+  ): number {
     const R = 6371e3; // meters
     const phi1 = (lat1 * Math.PI) / 180;
     const phi2 = (lat2 * Math.PI) / 180;
@@ -89,7 +97,7 @@ export class TrackingGateway {
     const deltaLambda = ((lon2 - lon1) * Math.PI) / 180;
 
     const a =
-      Math.sin(deltaPhi / 2) * Math.sin(deltaPhi/2) +
+      Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
       Math.cos(phi1) *
         Math.cos(phi2) *
         Math.sin(deltaLambda / 2) *

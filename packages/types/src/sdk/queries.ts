@@ -1,4 +1,4 @@
-import { TenantScoped, DriverId, SessionId } from '@/domain/value-objects.js';
+import { TenantScoped, DriverId, SessionId } from "@/domain/value-objects.js";
 
 /**
  * Query to fetch tenant configuration properties.

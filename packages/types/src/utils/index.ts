@@ -1,1 +1,1 @@
-export * from '@/utils/utility-types.js';
+export * from "@/utils/utility-types.js";

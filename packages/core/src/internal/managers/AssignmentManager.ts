@@ -4,15 +4,22 @@ import {
   SessionId,
   SessionState,
   DispatchWaveStatus,
-  Assignment
-} from '@motus/types';
-import { ISessionRepository, ILockManager, IEventBus, IClock, IIdGenerator, IEtaProvider } from '@/internal/interfaces/ports.js';
-import { SessionEntity } from '@/internal/entities/entities.js';
-import { ErrorFactory } from '@/internal/errors/ErrorFactory.js';
-import { StateMachineManager } from '@/internal/state/StateMachineManager.js';
-import { DriverManager } from '@/internal/managers/DriverManager.js';
-import { FanoutEngine } from '@/internal/services/fanout/FanoutEngine.js';
-import { IMetricsCollector } from '@/internal/observability/observability.js';
+  Assignment,
+} from "@motus/types";
+import {
+  ISessionRepository,
+  ILockManager,
+  IEventBus,
+  IClock,
+  IIdGenerator,
+  IEtaProvider,
+} from "@/internal/interfaces/ports.js";
+import { SessionEntity } from "@/internal/entities/entities.js";
+import { ErrorFactory } from "@/internal/errors/ErrorFactory.js";
+import { StateMachineManager } from "@/internal/state/StateMachineManager.js";
+import { DriverManager } from "@/internal/managers/DriverManager.js";
+import { FanoutEngine } from "@/internal/services/fanout/FanoutEngine.js";
+import { IMetricsCollector } from "@/internal/observability/observability.js";
 
 export class AssignmentManager {
   private readonly stateMachine = new StateMachineManager();
@@ -38,7 +45,10 @@ export class AssignmentManager {
     const sessionLockKey = `lock:session:${sessionId}`;
     const sessionLocked = await this.lockMgr.acquireLock(sessionLockKey, 10);
     if (!sessionLocked) {
-      throw ErrorFactory.lockAcquisitionFailed(sessionLockKey, 'Failed to lock session during offer acceptance.');
+      throw ErrorFactory.lockAcquisitionFailed(
+        sessionLockKey,
+        "Failed to lock session during offer acceptance."
+      );
     }
 
     try {
@@ -48,15 +58,25 @@ export class AssignmentManager {
       }
 
       // Idempotency: if already assigned to this driver, return success
-      if (session.status === SessionState.DRIVER_ASSIGNED && session.assignedDriverId === driverId) {
+      if (
+        session.status === SessionState.DRIVER_ASSIGNED &&
+        session.assignedDriverId === driverId
+      ) {
         return;
       }
 
-      this.stateMachine.validateSessionTransition(session.status, SessionState.DRIVER_ASSIGNED);
+      this.stateMachine.validateSessionTransition(
+        session.status,
+        SessionState.DRIVER_ASSIGNED
+      );
 
       // Verify active wave
       const activeWave = session.waves[session.waves.length - 1];
-      if (!activeWave || activeWave.waveNumber !== waveNumber || activeWave.status !== DispatchWaveStatus.ACTIVE) {
+      if (
+        !activeWave ||
+        activeWave.waveNumber !== waveNumber ||
+        activeWave.status !== DispatchWaveStatus.ACTIVE
+      ) {
         throw ErrorFactory.invalidTransition(
           session.status,
           SessionState.DRIVER_ASSIGNED,
@@ -78,7 +98,10 @@ export class AssignmentManager {
       const driverLockKey = `lock:driver:${driverId}`;
       const driverLocked = await this.lockMgr.acquireLock(driverLockKey, 10);
       if (!driverLocked) {
-        throw ErrorFactory.lockAcquisitionFailed(driverLockKey, 'Failed to lock driver to bind capacity.');
+        throw ErrorFactory.lockAcquisitionFailed(
+          driverLockKey,
+          "Failed to lock driver to bind capacity."
+        );
       }
 
       try {
@@ -86,17 +109,19 @@ export class AssignmentManager {
         await this.driverMgr.bindDriver(tenantId, driverId);
 
         // Update wave assignments
-        const updatedAssignments = activeWave.assignments.map((asg): Assignment => {
-          if (asg.driverId === driverId) {
-            return { ...asg, status: 'ACCEPTED' as const };
+        const updatedAssignments = activeWave.assignments.map(
+          (asg): Assignment => {
+            if (asg.driverId === driverId) {
+              return { ...asg, status: "ACCEPTED" as const };
+            }
+            return { ...asg, status: "EXPIRED" as const };
           }
-          return { ...asg, status: 'EXPIRED' as const };
-        });
+        );
 
         const updatedWave = {
           ...activeWave,
           status: DispatchWaveStatus.COMPLETED,
-          assignments: updatedAssignments
+          assignments: updatedAssignments,
         };
 
         const updatedWaves = [...session.waves.slice(0, -1), updatedWave];
@@ -121,7 +146,10 @@ export class AssignmentManager {
         if (this.etaProvider) {
           try {
             const driver = await this.driverMgr.getDriver(tenantId, driverId);
-            const eta = await this.etaProvider.calculateEta(driver.location, session.pickupPoint);
+            const eta = await this.etaProvider.calculateEta(
+              driver.location,
+              session.pickupPoint
+            );
             etaSec = eta.durationSeconds;
           } catch {
             // ignore routing errors, fallback to default
@@ -132,54 +160,61 @@ export class AssignmentManager {
         const nowStr = this.clock.now().toISOString();
         this.eventBus.publish({
           eventId: this.idGen.generateEventId(),
-          eventName: 'session.assigned',
+          eventName: "session.assigned",
           timestamp: nowStr,
           tenantId,
           payload: {
             tenantId,
             sessionId,
             assignedDriverId: driverId,
-            estimatedDurationSeconds: etaSec
+            estimatedDurationSeconds: etaSec,
           },
           governance: {
-            producer: 'DispatchEngine',
-            consumers: ['TrackingEngine', 'SocketServer'],
-            deliveryGuarantee: 'AT_LEAST_ONCE',
-            orderingScope: 'SESSION',
-            partitionKey: 'sessionId',
-            idempotencyRequirements: 'Lock driver assignment exclusively to prevent double allocation.',
-            version: '1.0.0'
-          }
+            producer: "DispatchEngine",
+            consumers: ["TrackingEngine", "SocketServer"],
+            deliveryGuarantee: "AT_LEAST_ONCE",
+            orderingScope: "SESSION",
+            partitionKey: "sessionId",
+            idempotencyRequirements:
+              "Lock driver assignment exclusively to prevent double allocation.",
+            version: "1.0.0",
+          },
         });
 
         this.eventBus.publish({
           eventId: this.idGen.generateEventId(),
-          eventName: 'dispatch.wave.completed',
+          eventName: "dispatch.wave.completed",
           timestamp: nowStr,
           tenantId,
           payload: {
             tenantId,
             sessionId,
             waveNumber,
-            acceptedDriverId: driverId
+            acceptedDriverId: driverId,
           },
           governance: {
-            producer: 'FanoutEngine',
-            consumers: ['SessionService', 'SocketServer'],
-            deliveryGuarantee: 'AT_LEAST_ONCE',
-            orderingScope: 'SESSION',
-            partitionKey: 'sessionId',
-            idempotencyRequirements: 'Clear outstanding wave assignments, update assigned driver.',
-            version: '1.0.0'
-          }
+            producer: "FanoutEngine",
+            consumers: ["SessionService", "SocketServer"],
+            deliveryGuarantee: "AT_LEAST_ONCE",
+            orderingScope: "SESSION",
+            partitionKey: "sessionId",
+            idempotencyRequirements:
+              "Clear outstanding wave assignments, update assigned driver.",
+            version: "1.0.0",
+          },
         });
 
         // Record metrics
         this.metrics.incrementAssignmentSuccess(tenantId);
 
         // Release other locks for this wave
-        const remainingCandidates = activeWave.candidates.filter(cid => cid !== driverId);
-        await this.fanoutEngine.releaseWaveLocks(sessionId, remainingCandidates);
+        const remainingCandidates = activeWave.candidates.filter(
+          (cid) => cid !== driverId
+        );
+        await this.fanoutEngine.releaseWaveLocks(
+          sessionId,
+          remainingCandidates
+        );
       } finally {
         await this.lockMgr.releaseLock(driverLockKey);
       }
@@ -197,7 +232,10 @@ export class AssignmentManager {
     const sessionLockKey = `lock:session:${sessionId}`;
     const sessionLocked = await this.lockMgr.acquireLock(sessionLockKey, 10);
     if (!sessionLocked) {
-      throw ErrorFactory.lockAcquisitionFailed(sessionLockKey, 'Failed to lock session during offer rejection.');
+      throw ErrorFactory.lockAcquisitionFailed(
+        sessionLockKey,
+        "Failed to lock session during offer rejection."
+      );
     }
 
     try {
@@ -208,7 +246,11 @@ export class AssignmentManager {
 
       // Verify active wave
       const activeWave = session.waves[session.waves.length - 1];
-      if (!activeWave || activeWave.waveNumber !== waveNumber || activeWave.status !== DispatchWaveStatus.ACTIVE) {
+      if (
+        !activeWave ||
+        activeWave.waveNumber !== waveNumber ||
+        activeWave.status !== DispatchWaveStatus.ACTIVE
+      ) {
         return; // Wave already inactive or mismatched, ignore (idempotent rejection)
       }
 
@@ -218,16 +260,18 @@ export class AssignmentManager {
       }
 
       // Update assignment to REJECTED
-      const updatedAssignments = activeWave.assignments.map((asg): Assignment => {
-        if (asg.driverId === driverId) {
-          return { ...asg, status: 'REJECTED' as const };
+      const updatedAssignments = activeWave.assignments.map(
+        (asg): Assignment => {
+          if (asg.driverId === driverId) {
+            return { ...asg, status: "REJECTED" as const };
+          }
+          return asg;
         }
-        return asg;
-      });
+      );
 
       const updatedWave = {
         ...activeWave,
-        assignments: updatedAssignments
+        assignments: updatedAssignments,
       };
 
       const updatedWaves = [...session.waves.slice(0, -1), updatedWave];
@@ -248,16 +292,20 @@ export class AssignmentManager {
       await this.sessionRepo.save(updatedSession);
 
       // Release candidate reservation locks for this driver instantly
-      await this.lockMgr.releaseLock(`lock:candidate:${driverId}:session:${sessionId}`);
+      await this.lockMgr.releaseLock(
+        `lock:candidate:${driverId}:session:${sessionId}`
+      );
       await this.lockMgr.releaseLock(`lock:driver:${driverId}`);
 
       // Check if all candidates in the wave have rejected or expired
-      const hasPending = updatedAssignments.some(asg => asg.status === 'PENDING');
+      const hasPending = updatedAssignments.some(
+        (asg) => asg.status === "PENDING"
+      );
       if (!hasPending) {
         // Complete the wave as expired since all candidates rejected
         const waveCompleted = {
           ...updatedWave,
-          status: DispatchWaveStatus.EXPIRED
+          status: DispatchWaveStatus.EXPIRED,
         };
         const finalWaves = [...session.waves.slice(0, -1), waveCompleted];
 

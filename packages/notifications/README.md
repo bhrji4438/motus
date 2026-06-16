@@ -1,41 +1,77 @@
 # @motus/notifications
 
-Unified and extensible notifications platform framework for Motus. Supports Firebase Cloud Messaging (FCM), Apple Push Notification Service (APNS), OneSignal, and modular custom notification integrations.
+Unified push notifications and templates dispatcher for the Motus platform.
 
-## Features
+---
 
-- **Provider Abstraction Layer**: Unified interface for APNS, FCM, and OneSignal, featuring capability mapping (`platforms`, `supportsTopics`, `supportsBulk`) and prioritizing options.
-- **Failover Routing Policy**: Smart routing matches platform contexts (e.g. iOS targets route first to APNS, Android to FCM) and transparently falls back to secondary networks.
-- **Deduplicated Scheduling**: Schedule future notifications with restart-recovery queues and idempotency guards to prevent duplicate sends.
-- **Preferences Checking**: User-level preference store checking opt-out configurations per communication channel and topic.
-- **Targeting Engine**: Maps user/driver identity keys to active device tokens and prunes stale/invalid tokens automatically on repeat errors.
-- **Reliable Retries**: Delivery attempts utilize exponential backoff delays with custom limits.
-- **Event-Driven Dispatch**: Bridge mapping core MotusEvents (such as session assigned) to template pushes automatically.
+## 1. Purpose
 
-## Usage
+Translates platform matching and wave events into push notifications targeted to driver and customer device tokens.
 
-### Setup and Dispatch
-```typescript
-import { NotificationService, FcmProvider, ApnsProvider } from '@motus/notifications';
+---
 
-const service = new NotificationService({
-  providers: [
-    new FcmProvider({ projectId: '...', clientEmail: '...', privateKey: '...' }),
-    new ApnsProvider({ teamId: '...', keyId: '...', key: '...', bundleId: '...' })
-  ],
-  maxRetries: 3
-});
+## 2. Installation
 
-// Register templates
-service.getTemplates().register({
-  id: 'dispatch_wave',
-  titleTemplate: 'New Offer!',
-  bodyTemplate: 'Hi {{name}}, you have a new dispatch offer.'
-});
-
-// Map recipient device token
-await service.getTargetingEngine().registerToken('tenant-1', 'driver-1', 'device-token-xyz', 'ios');
-
-// Send template push
-await service.sendWithTemplate('tenant-1', 'driver-1', 'dispatch_wave', { name: 'John' });
+```bash
+npm install @motus/notifications
 ```
+
+---
+
+## 3. Quick Start
+
+```typescript
+import { NotificationService } from "@motus/notifications";
+
+const notificationService = new NotificationService({
+  providers: [fcmProvider, apnsProvider],
+  preferenceStore: new InMemoryPreferenceStore(),
+  deliveryTracker: new InMemoryDeliveryTracker(),
+});
+```
+
+---
+
+## 4. Configuration
+
+Supports provider integrations (APNs, FCM, OneSignal). Options are passed into `NotificationServiceOptions` structures at initialization.
+
+---
+
+## 5. Common Use Cases
+
+- Registering mobile client tokens.
+- Enforcing push preference opt-ins.
+- Formatting push templates.
+- Scheduling delayed alert jobs.
+
+---
+
+## 6. API Reference Link
+
+- [API Reference: @motus/notifications](../../docs/api-reference/notifications.md)
+
+---
+
+## 7. Related Modules
+
+- `@motus/core` — Domain event listener hooks.
+- `@motus/types` — Notification config schemas.
+
+---
+
+## 8. Production Notes
+
+Inject push credentials (APNs certs, FCM keys) securely using environment configurations; never hardcode credentials in code.
+
+---
+
+## 9. Limitations
+
+Push deliveries are subject to mobile platform latency and network speed. Ensure delivery alerts are non-blocking within the main dispatch thread.
+
+---
+
+## 10. Examples
+
+Detailed registration and template setups can be found in the [Notifications Module Page](../../docs/modules/notifications.md).

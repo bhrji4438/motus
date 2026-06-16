@@ -1,19 +1,28 @@
-import { IEventBus } from '@/internal/interfaces/ports.js';
-import { MotusEvent } from '@motus/types';
-import { EventValidator } from '@/internal/events/EventValidator.js';
+import { IEventBus } from "@/internal/interfaces/ports.js";
+import { MotusEvent } from "@motus/types";
+import { EventValidator } from "@/internal/events/EventValidator.js";
 
 export class EventDispatcher implements IEventBus {
   private readonly validator = new EventValidator();
-  private readonly listeners = new Map<string, Set<(event: any) => void | Promise<void>>>();
+  private readonly listeners = new Map<
+    string,
+    Set<(event: any) => void | Promise<void>>
+  >();
 
-  public on(eventPattern: string, handler: (event: any) => void | Promise<void>): void {
+  public on(
+    eventPattern: string,
+    handler: (event: any) => void | Promise<void>
+  ): void {
     if (!this.listeners.has(eventPattern)) {
       this.listeners.set(eventPattern, new Set());
     }
     this.listeners.get(eventPattern)!.add(handler);
   }
 
-  public off(eventPattern: string, handler: (event: any) => void | Promise<void>): void {
+  public off(
+    eventPattern: string,
+    handler: (event: any) => void | Promise<void>
+  ): void {
     const set = this.listeners.get(eventPattern);
     if (set) {
       set.delete(handler);
@@ -23,7 +32,10 @@ export class EventDispatcher implements IEventBus {
     }
   }
 
-  public once(eventPattern: string, handler: (event: any) => void | Promise<void>): void {
+  public once(
+    eventPattern: string,
+    handler: (event: any) => void | Promise<void>
+  ): void {
     const wrapped = async (event: any) => {
       this.off(eventPattern, wrapped);
       await handler(event);
@@ -57,16 +69,19 @@ export class EventDispatcher implements IEventBus {
   }
 
   private matchPattern(eventName: string, pattern: string): boolean {
-    if (pattern === '*' || pattern === '**') {
+    if (pattern === "*" || pattern === "**") {
       return true;
     }
     if (pattern === eventName) {
       return true;
     }
     // Simple glob matching support (e.g. driver.* matches driver.online, driver.offline)
-    const regexStr = '^' + pattern
-      .replace(/[.+^${}()|[\]\\]/g, '\\$&') // escape special regex characters
-      .replace(/\*/g, '.*') + '$';
+    const regexStr =
+      "^" +
+      pattern
+        .replace(/[.+^${}()|[\]\\]/g, "\\$&") // escape special regex characters
+        .replace(/\*/g, ".*") +
+      "$";
     const regex = new RegExp(regexStr);
     return regex.test(eventName);
   }

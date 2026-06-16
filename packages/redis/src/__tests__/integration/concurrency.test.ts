@@ -1,9 +1,13 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
-import { startRedisTestContainer, flushTestRedis, type RedisTestContext } from '@/__tests__/helpers/RedisTestContainer.js';
-import { RedisLockManager } from '@/repositories/RedisLockManager.js';
-import { DEFAULT_LOCK_CONFIG } from '@/config/index.js';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
+import {
+  startRedisTestContainer,
+  flushTestRedis,
+  type RedisTestContext,
+} from "@/__tests__/helpers/RedisTestContainer.js";
+import { RedisLockManager } from "@/repositories/RedisLockManager.js";
+import { DEFAULT_LOCK_CONFIG } from "@/config/index.js";
 
-describe('Concurrency (integration)', () => {
+describe("Concurrency (integration)", () => {
   let ctx: RedisTestContext;
   let lockManager: RedisLockManager;
 
@@ -21,23 +25,23 @@ describe('Concurrency (integration)', () => {
     await flushTestRedis(ctx.client);
   });
 
-  it('exactly one of 10 concurrent lock attempts succeeds', async () => {
-    const resource = 'concurrent-lock';
+  it("exactly one of 10 concurrent lock attempts succeeds", async () => {
+    const resource = "concurrent-lock";
     const results = await Promise.all(
       Array.from({ length: 10 }, () => lockManager.acquireLock(resource))
     );
     expect(results.filter(Boolean)).toHaveLength(1);
   });
 
-  it('sequential processing with lock handoff works correctly', async () => {
-    const resource = 'handoff-lock';
+  it("sequential processing with lock handoff works correctly", async () => {
+    const resource = "handoff-lock";
     const order: number[] = [];
 
     const worker = async (id: number) => {
       const handle = await lockManager.acquireLockWithHandle(resource, 5000);
       if (!handle) return;
       order.push(id);
-      await new Promise(r => setTimeout(r, 20));
+      await new Promise((r) => setTimeout(r, 20));
       await lockManager.releaseLockHandle(handle);
     };
 
@@ -47,15 +51,15 @@ describe('Concurrency (integration)', () => {
     expect(order.length).toBeGreaterThan(0);
   });
 
-  it('lock held by one prevents concurrent modification', async () => {
-    const resource = 'atomic-resource';
+  it("lock held by one prevents concurrent modification", async () => {
+    const resource = "atomic-resource";
     let counter = 0;
 
     const increment = async () => {
       const handle = await lockManager.acquireLockWithHandle(resource, 5000);
       if (!handle) return;
       const current = counter;
-      await new Promise(r => setTimeout(r, 5));
+      await new Promise((r) => setTimeout(r, 5));
       counter = current + 1;
       await lockManager.releaseLockHandle(handle);
     };

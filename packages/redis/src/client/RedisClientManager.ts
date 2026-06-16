@@ -1,6 +1,6 @@
-import { Redis, Cluster } from 'ioredis';
-import type { MotusRedisConfig } from '@/config/index.js';
-import { LuaScriptRegistry } from '@/scripts/LuaScriptRegistry.js';
+import { Redis, Cluster } from "ioredis";
+import type { MotusRedisConfig } from "@/config/index.js";
+import { LuaScriptRegistry } from "@/scripts/LuaScriptRegistry.js";
 
 export type RedisClient = Redis | Cluster;
 
@@ -22,7 +22,9 @@ export class RedisClientManager {
   /** Returns the primary Redis client, throwing if not yet connected. */
   get client(): RedisClient {
     if (!this._client) {
-      throw new Error('RedisClientManager: client not connected. Call connect() first.');
+      throw new Error(
+        "RedisClientManager: client not connected. Call connect() first."
+      );
     }
     return this._client;
   }
@@ -34,7 +36,7 @@ export class RedisClientManager {
   get subscriberClient(): Redis {
     if (!this._subscriberClient) {
       throw new Error(
-        'RedisClientManager: subscriber client not connected. Call connect() first.'
+        "RedisClientManager: subscriber client not connected. Call connect() first."
       );
     }
     return this._subscriberClient;
@@ -47,14 +49,22 @@ export class RedisClientManager {
   async connect(): Promise<void> {
     if (this._client) return;
 
-    const { connection, retry, cluster: clusterCfg, sentinel: sentinelCfg } = this.config;
+    const {
+      connection,
+      retry,
+      cluster: clusterCfg,
+      sentinel: sentinelCfg,
+    } = this.config;
 
     const retryStrategy = (times: number): number =>
       Math.min(times * retry.reconnectBaseDelayMs, retry.reconnectMaxDelayMs);
 
     switch (connection.mode) {
-      case 'cluster': {
-        if (!clusterCfg) throw new Error('RedisClientManager: cluster config required for cluster mode.');
+      case "cluster": {
+        if (!clusterCfg)
+          throw new Error(
+            "RedisClientManager: cluster config required for cluster mode."
+          );
         this._client = new Cluster(clusterCfg.nodes, {
           redisOptions: {
             password: clusterCfg.password,
@@ -71,8 +81,11 @@ export class RedisClientManager {
         break;
       }
 
-      case 'sentinel': {
-        if (!sentinelCfg) throw new Error('RedisClientManager: sentinel config required for sentinel mode.');
+      case "sentinel": {
+        if (!sentinelCfg)
+          throw new Error(
+            "RedisClientManager: sentinel config required for sentinel mode."
+          );
         const sentinelClient = new Redis({
           sentinels: sentinelCfg.sentinels,
           name: sentinelCfg.name,
@@ -94,7 +107,7 @@ export class RedisClientManager {
       default: {
         // standalone
         this._client = new Redis({
-          host: connection.host ?? 'localhost',
+          host: connection.host ?? "localhost",
           port: connection.port ?? 6379,
           password: connection.password,
           db: connection.db ?? 0,
@@ -129,7 +142,7 @@ export class RedisClientManager {
 
   /** Returns true if the client is connected and ready. */
   isConnected(): boolean {
-    return this._client !== null && this._client.status === 'ready';
+    return this._client !== null && this._client.status === "ready";
   }
 
   private createStandaloneSubscriber(): Redis {
@@ -138,7 +151,7 @@ export class RedisClientManager {
       Math.min(times * retry.reconnectBaseDelayMs, retry.reconnectMaxDelayMs);
 
     return new Redis({
-      host: connection.host ?? 'localhost',
+      host: connection.host ?? "localhost",
       port: connection.port ?? 6379,
       password: connection.password,
       db: connection.db ?? 0,
@@ -153,12 +166,12 @@ export class RedisClientManager {
 
   private waitForReady(client: RedisClient): Promise<void> {
     return new Promise((resolve, reject) => {
-      if (client.status === 'ready') {
+      if (client.status === "ready") {
         resolve();
         return;
       }
-      client.once('ready', resolve);
-      client.once('error', reject);
+      client.once("ready", resolve);
+      client.once("error", reject);
     });
   }
 }

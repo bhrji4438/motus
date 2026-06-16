@@ -6,9 +6,9 @@ import {
   DriverResult,
   DriverId,
   TenantId,
-  SessionId
-} from '@motus/types';
-import { DriverManager } from '@/internal/managers/DriverManager.js';
+  SessionId,
+} from "@motus/types";
+import { DriverManager } from "@/internal/managers/DriverManager.js";
 
 export class DriverNamespace implements IDriverNamespace {
   // These dependencies will be fully resolved in subsequent phases
@@ -22,34 +22,52 @@ export class DriverNamespace implements IDriverNamespace {
     this.assignmentMgr = assignmentMgr;
   }
 
-  public async registerDriver(command: RegisterDriverCommand): Promise<DriverResult> {
+  public async registerDriver(
+    command: RegisterDriverCommand
+  ): Promise<DriverResult> {
     const driver = await this.driverMgr.registerDriver(command);
     return this.mapDriverToResult(driver);
   }
 
-  public async updateDriver(command: UpdateDriverCommand): Promise<DriverResult> {
+  public async updateDriver(
+    command: UpdateDriverCommand
+  ): Promise<DriverResult> {
     const driver = await this.driverMgr.updateDriver(command);
     return this.mapDriverToResult(driver);
   }
 
-  public async getDriver(tenantId: TenantId, driverId: DriverId): Promise<DriverResult> {
+  public async getDriver(
+    tenantId: TenantId,
+    driverId: DriverId
+  ): Promise<DriverResult> {
     const driver = await this.driverMgr.getDriver(tenantId, driverId);
     return this.mapDriverToResult(driver);
   }
 
-  public async setDriverOnline(tenantId: TenantId, driverId: DriverId): Promise<void> {
+  public async setDriverOnline(
+    tenantId: TenantId,
+    driverId: DriverId
+  ): Promise<void> {
     await this.driverMgr.setDriverOnline(tenantId, driverId);
   }
 
-  public async setDriverOffline(tenantId: TenantId, driverId: DriverId): Promise<void> {
+  public async setDriverOffline(
+    tenantId: TenantId,
+    driverId: DriverId
+  ): Promise<void> {
     await this.driverMgr.setDriverOffline(tenantId, driverId);
   }
 
-  public async setDriverPaused(tenantId: TenantId, driverId: DriverId): Promise<void> {
+  public async setDriverPaused(
+    tenantId: TenantId,
+    driverId: DriverId
+  ): Promise<void> {
     await this.driverMgr.setDriverPaused(tenantId, driverId);
   }
 
-  public async updateDriverLocation(command: UpdateDriverLocationCommand): Promise<void> {
+  public async updateDriverLocation(
+    command: UpdateDriverLocationCommand
+  ): Promise<void> {
     if (this.trackingMgr) {
       await this.trackingMgr.updateDriverLocation(command);
     }
@@ -62,7 +80,12 @@ export class DriverNamespace implements IDriverNamespace {
     waveNumber: number
   ): Promise<void> {
     if (this.assignmentMgr) {
-      await this.assignmentMgr.acceptSessionOffer(tenantId, driverId, sessionId, waveNumber);
+      await this.assignmentMgr.acceptSessionOffer(
+        tenantId,
+        driverId,
+        sessionId,
+        waveNumber
+      );
     }
   }
 
@@ -73,7 +96,12 @@ export class DriverNamespace implements IDriverNamespace {
     waveNumber: number
   ): Promise<void> {
     if (this.assignmentMgr) {
-      await this.assignmentMgr.rejectSessionOffer(tenantId, driverId, sessionId, waveNumber);
+      await this.assignmentMgr.rejectSessionOffer(
+        tenantId,
+        driverId,
+        sessionId,
+        waveNumber
+      );
     }
   }
 
@@ -85,12 +113,16 @@ export class DriverNamespace implements IDriverNamespace {
       capacity: driver.capacity,
       currentLoad: driver.currentLoad,
       vehicleType: driver.vehicleType,
-      lastHeartbeat: driver.lastHeartbeat
+      lastHeartbeat: driver.lastHeartbeat,
     };
-    if (driver.location && driver.location.latitude !== 0 && driver.location.longitude !== 0) {
+    if (
+      driver.location &&
+      driver.location.latitude !== 0 &&
+      driver.location.longitude !== 0
+    ) {
       res.lastLocation = {
         latitude: driver.location.latitude,
-        longitude: driver.location.longitude
+        longitude: driver.location.longitude,
       };
     }
     return res;

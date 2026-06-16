@@ -1,9 +1,10 @@
-import { TenantId } from '@motus/types';
+import { TenantId } from "@motus/types";
 
 export class EventMetadata {
   public validateEventId(eventId: string): boolean {
     // Basic UUIDv4 regex pattern check
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     return uuidRegex.test(eventId);
   }
 

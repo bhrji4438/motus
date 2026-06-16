@@ -1,5 +1,5 @@
-import { createInvalidArgumentError } from '@/errors/errors.js';
-import { MetricsManager } from '@/observability/MetricsManager.js';
+import { createInvalidArgumentError } from "@/errors/errors.js";
+import { MetricsManager } from "@/observability/MetricsManager.js";
 
 export class SubscriptionManager {
   private readonly socketSubscriptions = new Map<string, Set<string>>();
@@ -11,7 +11,11 @@ export class SubscriptionManager {
    * Returns true if newly subscribed, false if already subscribed.
    * Throws an error if subscription limits are exceeded.
    */
-  public subscribe(socketId: string, room: string, maxSubscriptions: number): boolean {
+  public subscribe(
+    socketId: string,
+    room: string,
+    maxSubscriptions: number
+  ): boolean {
     if (!this.socketSubscriptions.has(socketId)) {
       this.socketSubscriptions.set(socketId, new Set());
     }
@@ -23,11 +27,17 @@ export class SubscriptionManager {
     }
 
     if (subscriptions.size >= maxSubscriptions) {
-      throw createInvalidArgumentError(`Subscription limit exceeded. Max allowed: ${maxSubscriptions}`);
+      throw createInvalidArgumentError(
+        `Subscription limit exceeded. Max allowed: ${maxSubscriptions}`
+      );
     }
 
     subscriptions.add(room);
-    this.metrics.logger.debug(`Subscription recorded for socket`, { socketId, room, total: subscriptions.size });
+    this.metrics.logger.debug(`Subscription recorded for socket`, {
+      socketId,
+      room,
+      total: subscriptions.size,
+    });
     return true;
   }
 
@@ -46,7 +56,10 @@ export class SubscriptionManager {
       this.socketSubscriptions.delete(socketId);
     }
 
-    this.metrics.logger.debug(`Subscription removed for socket`, { socketId, room });
+    this.metrics.logger.debug(`Subscription removed for socket`, {
+      socketId,
+      room,
+    });
     return true;
   }
 
@@ -63,7 +76,10 @@ export class SubscriptionManager {
     const subscriptions = this.socketSubscriptions.get(socketId);
     if (subscriptions) {
       this.socketSubscriptions.delete(socketId);
-      this.metrics.logger.debug(`All subscriptions cleared for socket`, { socketId, count: subscriptions.size });
+      this.metrics.logger.debug(`All subscriptions cleared for socket`, {
+        socketId,
+        count: subscriptions.size,
+      });
     }
   }
 

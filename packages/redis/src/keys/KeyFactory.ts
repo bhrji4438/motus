@@ -1,4 +1,4 @@
-import type { TenantId, DriverId, SessionId } from '@motus/types';
+import type { TenantId, DriverId, SessionId } from "@motus/types";
 
 /**
  * Centralized key factory for all Redis key construction.
@@ -11,6 +11,8 @@ import type { TenantId, DriverId, SessionId } from '@motus/types';
  *   are never combined with tenant-scoped keys in Lua scripts.
  */
 export class KeyFactory {
+  static prefix = "vectro";
+
   // ─── Tenant ────────────────────────────────────────────────────────────────
 
   /** Hash storing tenant configuration and zones. Slot: tenantId. */
@@ -43,7 +45,10 @@ export class KeyFactory {
   }
 
   /** Redis Stream storing telemetry points for an active session. Slot: tenantId. */
-  static sessionTelemetryStream(tenantId: TenantId, sessionId: SessionId): string {
+  static sessionTelemetryStream(
+    tenantId: TenantId,
+    sessionId: SessionId
+  ): string {
     return `tenant:{${tenantId}}:session:${sessionId}:telemetry`;
   }
 
@@ -60,7 +65,7 @@ export class KeyFactory {
    * Single-key command only — never combined with tenant-scoped keys in Lua.
    */
   static sessionExpiryZset(): string {
-    return 'motus:sessions:expiry';
+    return `${KeyFactory.prefix}:sessions:expiry`;
   }
 
   // ─── Locks ─────────────────────────────────────────────────────────────────
@@ -92,17 +97,17 @@ export class KeyFactory {
 
   /** Cleanup job lock for session expiry pruner. Single-key command only. */
   static cleanupSessionExpiryLock(): string {
-    return 'lock:cleanup:session_expiry';
+    return "lock:cleanup:session_expiry";
   }
 
   /** Cleanup job lock for telemetry retention worker. Single-key command only. */
   static cleanupTelemetryLock(): string {
-    return 'lock:cleanup:telemetry_retention';
+    return "lock:cleanup:telemetry_retention";
   }
 
   /** Cleanup job lock for event retention worker. Single-key command only. */
   static cleanupEventLock(): string {
-    return 'lock:cleanup:event_retention';
+    return "lock:cleanup:event_retention";
   }
 
   /** Cleanup job lock for presence stale worker. Single-key command only. */
@@ -116,7 +121,11 @@ export class KeyFactory {
    * Pub/Sub channel for a specific event within a tenant.
    * Pattern: `motus:{tenantId}:events:{eventName}`
    */
-  static pubSubChannel(channelPrefix: string, tenantId: TenantId, eventName: string): string {
+  static pubSubChannel(
+    channelPrefix: string,
+    tenantId: TenantId,
+    eventName: string
+  ): string {
     return `${channelPrefix}:${tenantId}:events:${eventName}`;
   }
 
@@ -124,7 +133,10 @@ export class KeyFactory {
    * Wildcard Pub/Sub channel pattern for subscribing to all events in a tenant.
    * Pattern: `motus:{tenantId}:events:*`
    */
-  static pubSubTenantWildcard(channelPrefix: string, tenantId: TenantId): string {
+  static pubSubTenantWildcard(
+    channelPrefix: string,
+    tenantId: TenantId
+  ): string {
     return `${channelPrefix}:${tenantId}:events:*`;
   }
 
@@ -136,8 +148,10 @@ export class KeyFactory {
   }
 
   /** Parse a session expiry member back into tenantId and sessionId. */
-  static parseExpiryMember(member: string): { tenantId: TenantId; sessionId: SessionId } | null {
-    const idx = member.indexOf(':');
+  static parseExpiryMember(
+    member: string
+  ): { tenantId: TenantId; sessionId: SessionId } | null {
+    const idx = member.indexOf(":");
     if (idx === -1) return null;
     return {
       tenantId: member.substring(0, idx) as TenantId,

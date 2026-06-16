@@ -1,4 +1,4 @@
-import type { Redis, Cluster } from 'ioredis';
+import type { Redis, Cluster } from "ioredis";
 
 /**
  * Registry of all Lua scripts used by @motus/redis.
@@ -171,31 +171,31 @@ export class LuaScriptRegistry {
    * Must be called once during RedisClientManager.connect().
    */
   static register(client: Redis | Cluster): void {
-    (client as any).defineCommand('motusAcquireLock', {
+    (client as any).defineCommand("motusAcquireLock", {
       numberOfKeys: 1,
       lua: LuaScriptRegistry.ACQUIRE_LOCK,
     });
-    (client as any).defineCommand('motusReleaseLock', {
+    (client as any).defineCommand("motusReleaseLock", {
       numberOfKeys: 1,
       lua: LuaScriptRegistry.RELEASE_LOCK,
     });
-    (client as any).defineCommand('motusRenewLock', {
+    (client as any).defineCommand("motusRenewLock", {
       numberOfKeys: 1,
       lua: LuaScriptRegistry.RENEW_LOCK,
     });
-    (client as any).defineCommand('motusSaveDriverAtomic', {
+    (client as any).defineCommand("motusSaveDriverAtomic", {
       numberOfKeys: 3,
       lua: LuaScriptRegistry.SAVE_DRIVER_ATOMIC,
     });
-    (client as any).defineCommand('motusExpireSessionScan', {
+    (client as any).defineCommand("motusExpireSessionScan", {
       numberOfKeys: 1,
       lua: LuaScriptRegistry.EXPIRE_SESSION_SCAN,
     });
-    (client as any).defineCommand('motusPruneSessionData', {
+    (client as any).defineCommand("motusPruneSessionData", {
       numberOfKeys: 3,
       lua: LuaScriptRegistry.PRUNE_SESSION_DATA,
     });
-    (client as any).defineCommand('motusDriverStatusCas', {
+    (client as any).defineCommand("motusDriverStatusCas", {
       numberOfKeys: 1,
       lua: LuaScriptRegistry.DRIVER_STATUS_CAS,
     });

@@ -10,8 +10,8 @@ import {
   MotusEvent,
   EtaResult,
   Zone,
-  DriverStatus
-} from '@motus/types';
+  DriverStatus,
+} from "@motus/types";
 
 export interface ITenantRepository {
   save(tenant: Tenant): Promise<void>;
@@ -21,9 +21,22 @@ export interface ITenantRepository {
 export interface IDriverRepository {
   save(driver: Driver): Promise<void>;
   get(tenantId: TenantId, driverId: DriverId): Promise<Driver | null>;
-  updateLocation(tenantId: TenantId, driverId: DriverId, location: Location): Promise<void>;
-  findNearbyDrivers(tenantId: TenantId, location: Coordinates, radiusMeters: number, limit: number): Promise<readonly Driver[]>;
-  setDriverStatus(tenantId: TenantId, driverId: DriverId, status: DriverStatus): Promise<void>;
+  updateLocation(
+    tenantId: TenantId,
+    driverId: DriverId,
+    location: Location
+  ): Promise<void>;
+  findNearbyDrivers(
+    tenantId: TenantId,
+    location: Coordinates,
+    radiusMeters: number,
+    limit: number
+  ): Promise<readonly Driver[]>;
+  setDriverStatus(
+    tenantId: TenantId,
+    driverId: DriverId,
+    status: DriverStatus
+  ): Promise<void>;
 }
 
 export interface ISessionRepository {
@@ -63,7 +76,10 @@ export interface IIdGenerator {
 }
 
 export interface IEtaProvider {
-  calculateEta(origin: Coordinates, destination: Coordinates): Promise<EtaResult>;
+  calculateEta(
+    origin: Coordinates,
+    destination: Coordinates
+  ): Promise<EtaResult>;
 }
 
 export interface IGeofenceProvider {

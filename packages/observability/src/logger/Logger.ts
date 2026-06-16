@@ -1,13 +1,13 @@
-import pino, { Logger as PinoInstance, LoggerOptions } from 'pino';
-import { ILogger } from '@motus/core';
-import { CorrelationContext } from '@/logger/CorrelationContext.js';
+import pino, { Logger as PinoInstance, LoggerOptions } from "pino";
+import { ILogger } from "@motus/core";
+import { CorrelationContext } from "@/logger/CorrelationContext.js";
 
 export class Logger implements ILogger {
   private pino: PinoInstance;
 
   constructor(options: LoggerOptions = {}) {
     this.pino = pino({
-      level: process.env.LOG_LEVEL || 'info',
+      level: process.env.LOG_LEVEL || "info",
       formatters: {
         level: (label) => ({ level: label.toUpperCase() }),
       },
@@ -48,7 +48,11 @@ export class Logger implements ILogger {
     // If the first argument in args is an Error instance, serialize it
     const errorObj = args.find((arg) => arg instanceof Error);
     if (errorObj) {
-      this.pino.error({ ...context, err: errorObj }, message, ...args.filter(a => a !== errorObj));
+      this.pino.error(
+        { ...context, err: errorObj },
+        message,
+        ...args.filter((a) => a !== errorObj)
+      );
     } else {
       this.pino.error(context, message, ...args);
     }

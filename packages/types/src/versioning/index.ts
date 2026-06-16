@@ -1,1 +1,1 @@
-export * from '@/versioning/contracts.js';
+export * from "@/versioning/contracts.js";

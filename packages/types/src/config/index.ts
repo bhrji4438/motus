@@ -1,1 +1,1 @@
-export * from '@/config/config-contracts.js';
+export * from "@/config/config-contracts.js";

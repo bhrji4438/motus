@@ -1,9 +1,19 @@
-import { TenantId, SessionId, SessionState, DispatchWaveStatus } from '@motus/types';
-import { ISessionRepository, ILockManager, IClock, IIdGenerator } from '@/internal/interfaces/ports.js';
-import { SessionEntity } from '@/internal/entities/entities.js';
-import { FanoutEngine } from '@/internal/services/fanout/FanoutEngine.js';
-import { SessionManager } from '@/internal/managers/SessionManager.js';
-import { IMetricsCollector } from '@/internal/observability/observability.js';
+import {
+  TenantId,
+  SessionId,
+  SessionState,
+  DispatchWaveStatus,
+} from "@motus/types";
+import {
+  ISessionRepository,
+  ILockManager,
+  IClock,
+  IIdGenerator,
+} from "@/internal/interfaces/ports.js";
+import { SessionEntity } from "@/internal/entities/entities.js";
+import { FanoutEngine } from "@/internal/services/fanout/FanoutEngine.js";
+import { SessionManager } from "@/internal/managers/SessionManager.js";
+import { IMetricsCollector } from "@/internal/observability/observability.js";
 
 export class FanoutTimeoutWorker {
   constructor(
@@ -16,7 +26,10 @@ export class FanoutTimeoutWorker {
     private readonly metrics: IMetricsCollector
   ) {}
 
-  public async checkWaveExpirations(tenantId: TenantId, sessionId: SessionId): Promise<void> {
+  public async checkWaveExpirations(
+    tenantId: TenantId,
+    sessionId: SessionId
+  ): Promise<void> {
     const lockKey = `lock:session:${sessionId}`;
     const acquired = await this.lockMgr.acquireLock(lockKey, 10);
     if (!acquired) {
@@ -41,15 +54,15 @@ export class FanoutTimeoutWorker {
 
       if (now >= expiresAt) {
         // Wave has timed out!
-        const updatedAssignments = activeWave.assignments.map(asg => ({
+        const updatedAssignments = activeWave.assignments.map((asg) => ({
           ...asg,
-          status: 'EXPIRED' as const
+          status: "EXPIRED" as const,
         }));
 
         const updatedWave = {
           ...activeWave,
           status: DispatchWaveStatus.EXPIRED,
-          assignments: updatedAssignments
+          assignments: updatedAssignments,
         };
 
         const updatedWaves = [...session.waves.slice(0, -1), updatedWave];
@@ -73,7 +86,10 @@ export class FanoutTimeoutWorker {
         this.metrics.incrementAssignmentTimeout(tenantId);
 
         // Release candidate locks for the expired wave
-        await this.fanoutEngine.releaseWaveLocks(sessionId, activeWave.candidates);
+        await this.fanoutEngine.releaseWaveLocks(
+          sessionId,
+          activeWave.candidates
+        );
 
         // Advance to next wave
         await this.fanoutEngine.startNextWave(updatedSession);

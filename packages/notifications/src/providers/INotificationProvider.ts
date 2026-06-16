@@ -1,7 +1,7 @@
 export interface ProviderCapabilities {
   supportsBulk: boolean;
   supportsTopics: boolean;
-  platforms: ('ios' | 'android' | 'web')[];
+  platforms: ("ios" | "android" | "web")[];
 }
 
 export interface NotificationPayload {
@@ -11,7 +11,7 @@ export interface NotificationPayload {
   title: string;
   body: string;
   data?: Record<string, string> | undefined;
-  priority?: 'normal' | 'high' | undefined;
+  priority?: "normal" | "high" | undefined;
   ttl?: number | undefined;
 }
 
@@ -28,5 +28,8 @@ export interface INotificationProvider {
   readonly capabilities: ProviderCapabilities;
   send(payload: NotificationPayload): Promise<NotificationResult>;
   sendBulk?(payloads: NotificationPayload[]): Promise<NotificationResult[]>;
-  checkHealth(): Promise<{ status: 'UP' | 'DOWN'; details?: Record<string, any> }>;
+  checkHealth(): Promise<{
+    status: "UP" | "DOWN";
+    details?: Record<string, any>;
+  }>;
 }

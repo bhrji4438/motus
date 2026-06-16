@@ -1,6 +1,6 @@
-import { Coordinates, TelemetryPoint } from '@motus/types';
-import { calculateHaversineDistance } from '@/internal/services/matching/haversine.js';
-import { encodePolyline } from '@/internal/services/telemetry/polyline.js';
+import { Coordinates, TelemetryPoint } from "@motus/types";
+import { calculateHaversineDistance } from "@/internal/services/matching/haversine.js";
+import { encodePolyline } from "@/internal/services/telemetry/polyline.js";
 
 export class TelemetryManager {
   /**
@@ -44,7 +44,7 @@ export class TelemetryManager {
         totalDistanceMeters: 0,
         totalDurationSeconds: 0,
         idleDurationSeconds: 0,
-        avgSpeedMps: 0
+        avgSpeedMps: 0,
       };
     }
 
@@ -70,13 +70,14 @@ export class TelemetryManager {
       }
     }
 
-    const avgSpeedMps = totalDurationSeconds > 0 ? totalDistanceMeters / totalDurationSeconds : 0;
+    const avgSpeedMps =
+      totalDurationSeconds > 0 ? totalDistanceMeters / totalDurationSeconds : 0;
 
     return {
       totalDistanceMeters,
       totalDurationSeconds,
       idleDurationSeconds,
-      avgSpeedMps
+      avgSpeedMps,
     };
   }
 }

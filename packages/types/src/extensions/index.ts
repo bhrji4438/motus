@@ -1,1 +1,1 @@
-export * from '@/extensions/extension-contracts.js';
+export * from "@/extensions/extension-contracts.js";

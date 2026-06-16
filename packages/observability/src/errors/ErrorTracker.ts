@@ -1,7 +1,10 @@
-import { trace } from '@opentelemetry/api';
-import { logger } from '@/logger/Logger.js';
+import { trace } from "@opentelemetry/api";
+import { logger } from "@/logger/Logger.js";
 
-export type ErrorHook = (error: Error, context?: Record<string, any>) => void | Promise<void>;
+export type ErrorHook = (
+  error: Error,
+  context?: Record<string, any>
+) => void | Promise<void>;
 
 export class ErrorTracker {
   private static hooks: ErrorHook[] = [];
@@ -25,7 +28,7 @@ export class ErrorTracker {
    */
   public static captureException(
     error: Error,
-    message: string = 'An unhandled exception occurred',
+    message: string = "An unhandled exception occurred",
     context: Record<string, any> = {}
   ): void {
     // 1. Get active OpenTelemetry span and record the exception
@@ -56,11 +59,11 @@ export class ErrorTracker {
         const result = hook(error, context);
         if (result instanceof Promise) {
           result.catch((hookError) => {
-            logger.warn('Error hook execution failed', hookError);
+            logger.warn("Error hook execution failed", hookError);
           });
         }
       } catch (hookError) {
-        logger.warn('Error hook execution failed', hookError);
+        logger.warn("Error hook execution failed", hookError);
       }
     }
   }

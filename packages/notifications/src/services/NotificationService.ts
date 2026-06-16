@@ -1,9 +1,22 @@
-import { INotificationProvider, NotificationPayload, NotificationResult } from '@/providers/INotificationProvider.js';
-import { TemplateManager } from '@/templates/TemplateManager.js';
-import { INotificationPreferenceStore, InMemoryPreferenceStore } from '@/preferences/PreferenceStore.js';
-import { TargetingEngine } from '@/targeting/TargetingEngine.js';
-import { IDeliveryTracker, InMemoryDeliveryTracker } from '@/delivery/DeliveryTracker.js';
-import { INotificationScheduler, InMemoryNotificationScheduler } from '@/scheduling/NotificationScheduler.js';
+import {
+  INotificationProvider,
+  NotificationPayload,
+  NotificationResult,
+} from "@/providers/INotificationProvider.js";
+import { TemplateManager } from "@/templates/TemplateManager.js";
+import {
+  INotificationPreferenceStore,
+  InMemoryPreferenceStore,
+} from "@/preferences/PreferenceStore.js";
+import { TargetingEngine } from "@/targeting/TargetingEngine.js";
+import {
+  IDeliveryTracker,
+  InMemoryDeliveryTracker,
+} from "@/delivery/DeliveryTracker.js";
+import {
+  INotificationScheduler,
+  InMemoryNotificationScheduler,
+} from "@/scheduling/NotificationScheduler.js";
 
 export interface NotificationServiceOptions {
   providers: INotificationProvider[];
@@ -24,15 +37,17 @@ export class NotificationService {
   private scheduler: INotificationScheduler;
   private maxRetries: number;
   private rateLimitMs: number;
-  
+
   // Rate limiting storage: recipientId -> last sent time
   private lastSentTimes = new Map<string, number>();
 
   constructor(options: NotificationServiceOptions) {
-    options.providers.forEach(p => this.providers.set(p.name, p));
-    this.preferenceStore = options.preferenceStore || new InMemoryPreferenceStore();
+    options.providers.forEach((p) => this.providers.set(p.name, p));
+    this.preferenceStore =
+      options.preferenceStore || new InMemoryPreferenceStore();
     this.targetingEngine = options.targetingEngine || new TargetingEngine();
-    this.deliveryTracker = options.deliveryTracker || new InMemoryDeliveryTracker();
+    this.deliveryTracker =
+      options.deliveryTracker || new InMemoryDeliveryTracker();
     this.scheduler = options.scheduler || new InMemoryNotificationScheduler();
     this.maxRetries = options.maxRetries !== undefined ? options.maxRetries : 3;
     this.rateLimitMs = options.rateLimitMs || 1000; // 1 second default threshold
@@ -58,15 +73,21 @@ export class NotificationService {
    * Main Send function: executes preference verification, checks rate limits,
    * resolves active target device tokens, runs provider routing, retries, and records status receipts.
    */
-  public async send(tenantId: string, recipientId: string, title: string, body: string, data?: Record<string, string>): Promise<NotificationResult> {
+  public async send(
+    tenantId: string,
+    recipientId: string,
+    title: string,
+    body: string,
+    data?: Record<string, string>
+  ): Promise<NotificationResult> {
     const timestamp = new Date().toISOString();
 
     // 1. Preference Validation
-    const isAllowed = await this.preferenceStore.isAllowed(recipientId, 'push');
+    const isAllowed = await this.preferenceStore.isAllowed(recipientId, "push");
     if (!isAllowed) {
       return {
         success: false,
-        providerName: 'none',
+        providerName: "none",
         error: `User preference opted-out of push notifications`,
         timestamp,
       };
@@ -78,7 +99,7 @@ export class NotificationService {
     if (now - lastSent < this.rateLimitMs) {
       return {
         success: false,
-        providerName: 'none',
+        providerName: "none",
         error: `Rate limit exceeded for recipient '${recipientId}'`,
         timestamp,
       };
@@ -86,12 +107,15 @@ export class NotificationService {
     this.lastSentTimes.set(recipientId, now);
 
     // 3. Resolve Target Tokens
-    const devices = await this.targetingEngine.getTokensForUser(tenantId, recipientId);
+    const devices = await this.targetingEngine.getTokensForUser(
+      tenantId,
+      recipientId
+    );
     if (devices.length === 0) {
       // Return a mock result to allow graceful execution when no devices are registered
       return {
         success: false,
-        providerName: 'none',
+        providerName: "none",
         error: `No registered device tokens found for recipient '${recipientId}'`,
         timestamp,
       };
@@ -108,15 +132,21 @@ export class NotificationService {
     };
 
     // 4. Create Delivery Receipt
-    const receipt = await this.deliveryTracker.createReceipt(tenantId, payload, 'push');
+    const receipt = await this.deliveryTracker.createReceipt(
+      tenantId,
+      payload,
+      "push"
+    );
 
     // 5. Select provider based on routing options and capabilities
-    const providersQueue = this.determineProviderRouting(primaryDevice.platform);
-    
+    const providersQueue = this.determineProviderRouting(
+      primaryDevice.platform
+    );
+
     let lastResult: NotificationResult = {
       success: false,
-      providerName: 'none',
-      error: 'No compatible provider found',
+      providerName: "none",
+      error: "No compatible provider found",
       timestamp,
     };
 
@@ -124,7 +154,7 @@ export class NotificationService {
     for (const provider of providersQueue) {
       // Check provider health before making external call
       const health = await provider.checkHealth();
-      if (health.status === 'DOWN') {
+      if (health.status === "DOWN") {
         continue; // Fallback to next provider in queue
       }
 
@@ -143,7 +173,11 @@ export class NotificationService {
             break;
           } else {
             // Record token failure in targeting engine
-            await this.targetingEngine.recordFailure(tenantId, recipientId, primaryDevice.token);
+            await this.targetingEngine.recordFailure(
+              tenantId,
+              recipientId,
+              primaryDevice.token
+            );
           }
         } catch (err: any) {
           lastResult = {
@@ -156,7 +190,9 @@ export class NotificationService {
 
         // Simple exponential backoff delay before next retry
         if (!sentSuccess && attempt < this.maxRetries) {
-          await new Promise(res => setTimeout(res, Math.pow(2, attempt) * 100));
+          await new Promise((res) =>
+            setTimeout(res, Math.pow(2, attempt) * 100)
+          );
         }
       }
 
@@ -179,7 +215,13 @@ export class NotificationService {
     data?: Record<string, string>
   ): Promise<NotificationResult> {
     const rendered = this.templateManager.render(templateId, variables);
-    return this.send(tenantId, recipientId, rendered.title, rendered.body, data);
+    return this.send(
+      tenantId,
+      recipientId,
+      rendered.title,
+      rendered.body,
+      data
+    );
   }
 
   /**
@@ -201,21 +243,26 @@ export class NotificationService {
   /**
    * Determine provider queue order based on platform and health checks.
    */
-  private determineProviderRouting(platform: 'ios' | 'android' | 'web'): INotificationProvider[] {
+  private determineProviderRouting(
+    platform: "ios" | "android" | "web"
+  ): INotificationProvider[] {
     const queue: INotificationProvider[] = [];
 
     // Prioritize providers natively matching the target device platform
-    if (platform === 'ios') {
-      const apns = this.providers.get('apns');
+    if (platform === "ios") {
+      const apns = this.providers.get("apns");
       if (apns) queue.push(apns);
     } else {
-      const fcm = this.providers.get('fcm');
+      const fcm = this.providers.get("fcm");
       if (fcm) queue.push(fcm);
     }
 
     // Add remaining fallback providers
-    this.providers.forEach(provider => {
-      if (!queue.includes(provider) && provider.capabilities.platforms.includes(platform)) {
+    this.providers.forEach((provider) => {
+      if (
+        !queue.includes(provider) &&
+        provider.capabilities.platforms.includes(platform)
+      ) {
         queue.push(provider);
       }
     });

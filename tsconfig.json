@@ -8,6 +8,7 @@
     { "path": "packages/testing" },
     { "path": "packages/observability" },
     { "path": "packages/notifications" },
-    { "path": "packages/dashboard" }
+    { "path": "packages/dashboard" },
+    { "path": "packages/sdk" }
   ]
 }

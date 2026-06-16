@@ -1,67 +1,76 @@
 # @motus/socketio
 
-Real-time Socket.IO transport layer for the **Motus** dispatch and tracking platform.
+Socket.IO transport gateway adapter for real-time location heartbeats.
 
-Provides driver presence updates, high-frequency location streaming, session subscription lifecycles, and horizontal scaling adapters.
+---
 
-## Installation
+## 1. Purpose
+
+Establishes WebSocket connections with mobile devices to ingest high-frequency location heartbeats and broadcast live driver tracking positions to customer clients.
+
+---
+
+## 2. Installation
 
 ```bash
-npm install @motus/socketio
+npm install @motus/socketio socket.io
 ```
 
-## Features
+---
 
-- **Decoupled Transport Abstractions**: Wraps Socket.IO behind a clean `TransportAdapter` contract.
-- **Extensible Authentication**: Plug in JWT, OAuth, or custom session tokens using `IAuthenticator`.
-- **Multi-device Driver presence**: Tracks multiple connected devices per driver ID, automatically coordinating presence states.
-- **Telemetry Optimization**: Spatial (2-meter) decimation and temporal (1Hz) throttling logic built-in to prevent network congestion.
-- **Horizontal Clustering**: Scalable across multiple Socket.IO server instances using `@socket.io/redis-adapter`.
-- **Fault Tolerance**: Fallback local-routing mode during Redis outages and custom disconnect grace-period timers.
-
-## Basic Usage
+## 3. Quick Start
 
 ```typescript
-import { SocketServer } from '@motus/socketio';
-import { Motus } from '@motus/core'; // core namespaces
-import { RedisClientManager } from '@motus/redis';
+import http from "http";
+import { SocketServer } from "@motus/socketio";
 
-// 1. Initialize core dependencies
-const driverNamespace = new DriverNamespace(driverManager);
-
-// 2. Define custom authenticator
-const customAuthenticator = {
-  async authenticate(handshake) {
-    const token = handshake.token;
-    if (!token) throw new Error('Unauthenticated');
-    return {
-      tenantId: 'tenant_abc',
-      driverId: token.startsWith('driver_') ? 'driver_123' : undefined,
-    };
-  }
-};
-
-// 3. Instantiate SocketServer
-const server = new SocketServer(
-  {
-    port: 8080,
-    path: '/socket.io',
-    connectionStateRecovery: { enabled: true }
-  },
-  customAuthenticator,
-  driverNamespace
-);
-
-// 4. Start listening
-await server.start();
+const server = http.createServer();
+const socketServer = new SocketServer({ port: 8080 });
+socketServer.attach(server);
 ```
 
-## Documentation Guides
+---
 
-For in-depth guides, see the following markdown documentation files:
-- [Gateway Event Schema Guide](./docs/gateways.md)
-- [Pluggable Authentication Guide](./docs/authentication.md)
-- [Room Design & Lifecycle](./docs/room-strategy.md)
-- [Scaling & Performance Guidelines](./docs/scaling.md)
-- [Redis Adapter Configuration](./docs/redis-adapter.md)
-- [Troubleshooting & Failure Scenarios](./docs/troubleshooting.md)
+## 4. Configuration
+
+Exposes connection config parameters (port, path, corsOrigin). Hook custom authenticators using the `IAuthenticator` interface.
+
+---
+
+## 5. Common Use Cases
+
+- Managing `/drivers` namespace connections for heartbeats and offer responses.
+- Managing `/sessions` namespace tracking rooms.
+- Validating handshakes.
+- Enforcing connection recovery mappings on socket disruptions.
+
+---
+
+## 6. API Reference Link
+
+- [API Reference: @motus/socketio](../../docs/api-reference/socketio.md)
+
+---
+
+## 7. Related Modules
+
+- `@motus/core` — Location logic namespaces.
+- `@motus/redis` — Pub/Sub channel broadcasts.
+
+---
+
+## 8. Production Notes
+
+Enable sticky sessions at the load balancer layer (HAProxy/Nginx) to route websocket handshakes to the same server node.
+
+---
+
+## 9. Limitations
+
+Does not handle core business transactions; it serves as a network gateway layer forwarding commands to the underlying `@motus/core` managers.
+
+---
+
+## 10. Examples
+
+Detailed socket configuration examples can be found in the [Realtime Communication Module Page](../../docs/modules/realtime-communication.md).

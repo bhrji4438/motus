@@ -7,11 +7,11 @@ export class RealtimeClient {
   private listeners = new Map<string, Set<RealtimeCallback>>();
   private ws: WebSocket | undefined;
   private sse: EventSource | undefined;
-  private activeTransport: 'ws' | 'sse' | 'none' = 'none';
+  private activeTransport: "ws" | "sse" | "none" = "none";
 
   constructor(tenantId: string, host: string = window.location.host) {
     this.tenantId = tenantId;
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     this.wsUrl = `${protocol}//${host}/dashboard/rt?tenantId=${tenantId}`;
     this.sseUrl = `${window.location.protocol}//${host}/api/dashboard/${tenantId}/realtime/sse`;
   }
@@ -50,7 +50,10 @@ export class RealtimeClient {
         try {
           cb(payload);
         } catch (err) {
-          console.error(`Error executing realtime callback for event '${event}':`, err);
+          console.error(
+            `Error executing realtime callback for event '${event}':`,
+            err
+          );
         }
       }
     }
@@ -70,7 +73,7 @@ export class RealtimeClient {
       this.ws.onmessage = (msgEvent) => {
         try {
           const parsed = JSON.parse(msgEvent.data);
-          this.activeTransport = 'ws';
+          this.activeTransport = "ws";
           if (parsed.event) {
             this.emit(parsed.event, parsed.payload);
           }
@@ -86,7 +89,7 @@ export class RealtimeClient {
 
       this.ws.onclose = (_event) => {
         // If it was active and closed unexpectedly, try to fall back or reconnect
-        if (this.activeTransport === 'none') {
+        if (this.activeTransport === "none") {
           this.fallbackToSse();
         }
       };
@@ -96,15 +99,15 @@ export class RealtimeClient {
   }
 
   private fallbackToSse(): void {
-    if (this.activeTransport === 'ws' || this.sse) return;
+    if (this.activeTransport === "ws" || this.sse) return;
 
     try {
       this.sse = new EventSource(this.sseUrl);
-      this.activeTransport = 'sse';
+      this.activeTransport = "sse";
 
       // Attach listener for default event channels
-      const eventNames = ['session.updated', 'driver.moved', 'metrics.updated'];
-      eventNames.forEach(evt => {
+      const eventNames = ["session.updated", "driver.moved", "metrics.updated"];
+      eventNames.forEach((evt) => {
         this.sse?.addEventListener(evt, (e: any) => {
           try {
             const parsed = JSON.parse(e.data);
@@ -118,12 +121,12 @@ export class RealtimeClient {
       this.sse.onerror = () => {
         this.sse?.close();
         this.sse = undefined;
-        this.activeTransport = 'none';
+        this.activeTransport = "none";
         // Retry connection after 5 seconds
         setTimeout(() => this.connect(), 5000);
       };
     } catch {
-      this.activeTransport = 'none';
+      this.activeTransport = "none";
     }
   }
 
@@ -136,10 +139,10 @@ export class RealtimeClient {
       this.sse.close();
       this.sse = undefined;
     }
-    this.activeTransport = 'none';
+    this.activeTransport = "none";
   }
 
-  public getActiveTransport(): 'ws' | 'sse' | 'none' {
+  public getActiveTransport(): "ws" | "sse" | "none" {
     return this.activeTransport;
   }
 }

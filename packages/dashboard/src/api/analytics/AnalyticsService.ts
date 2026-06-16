@@ -1,4 +1,4 @@
-import { AnalyticsSummary } from '@/types/contracts.js';
+import { AnalyticsSummary } from "@/types/contracts.js";
 
 export class AnalyticsService {
   private activeSessionsMap = new Map<string, number>(); // tenantId -> count
