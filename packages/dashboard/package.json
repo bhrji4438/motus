@@ -1,0 +1,60 @@
+{
+  "name": "@motus/dashboard",
+  "version": "1.0.0",
+  "description": "Operational and system health monitoring dashboard for Motus",
+  "author": "Mohit Gupta <bhrji.4438@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bhrji4438/motus.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup && vite build --outDir dist/ui",
+    "dev": "tsup --watch",
+    "clean": "rimraf dist",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@motus/types": "*",
+    "@motus/core": "*",
+    "@motus/redis": "*",
+    "fastify": "^4.26.0",
+    "ws": "^8.17.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "lucide-react": "^0.395.0",
+    "chart.js": "^4.4.3",
+    "react-chartjs-2": "^5.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@types/ws": "^8.5.10",
+    "@vitejs/plugin-react": "^4.3.0",
+    "@vitest/coverage-v8": "^1.6.1",
+    "rimraf": "^5.0.7",
+    "tsup": "^8.0.2",
+    "typescript": "^5.4.5",
+    "vite": "^5.2.11",
+    "vitest": "^1.6.0"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "name": "@motus/core",
+  "version": "1.0.0",
+  "description": "Pure domain logic dispatch and tracking engine for Motus",
+  "author": "Mohit Gupta <bhrji.4438@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bhrji4438/motus.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "clean": "rimraf dist",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@motus/types": "*"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^1.6.1",
+    "rimraf": "^5.0.7",
+    "tsup": "^8.0.2",
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
+  }
+}

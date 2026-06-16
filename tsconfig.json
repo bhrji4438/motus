@@ -1,0 +1,13 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/types" },
+    { "path": "packages/core" },
+    { "path": "packages/redis" },
+    { "path": "packages/socketio" },
+    { "path": "packages/testing" },
+    { "path": "packages/observability" },
+    { "path": "packages/notifications" },
+    { "path": "packages/dashboard" }
+  ]
+}

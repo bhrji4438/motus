@@ -1,0 +1,30 @@
+{
+  "name": "motus-monorepo",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc -b",
+    "build": "npm run build --workspaces --if-present",
+    "clean": "npm run clean --workspaces --if-present",
+    "lint": "eslint . --max-warnings 0",
+    "format:check": "prettier --check \"**/*.{ts,js,json,md}\" --if-present",
+    "format": "prettier --write \"**/*.{ts,js,json,md}\" --if-present",
+    "release": "npm run release:check && npm run release:publish",
+    "release:version": "changeset version",
+    "release:changelog": "changeset version",
+    "release:publish": "node scripts/release-publish.js",
+    "release:check": "npm run build && node scripts/release-check.js"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.31.0",
+    "@typescript-eslint/eslint-plugin": "^8.61.1",
+    "@typescript-eslint/parser": "^8.61.1",
+    "eslint": "^10.5.0"
+  }
+}
