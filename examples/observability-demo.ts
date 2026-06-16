@@ -9,7 +9,7 @@ import {
 
 async function main() {
   // 1. Initialize OpenTelemetry tracing with Console tracing
-  Tracer.initialize("motus-demo-service", {
+  Tracer.initialize("vectro-demo-service", {
     tracesExporter: "console",
     metricsExporter: "console",
   });

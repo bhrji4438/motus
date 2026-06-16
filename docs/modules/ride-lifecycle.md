@@ -55,10 +55,10 @@ stateDiagram-v2
 
 ## 7. Public APIs
 
-- `SessionNamespace.createSession(command: CreateSessionCommand): Promise<SessionResult>`
-- `SessionNamespace.cancelSession(command: CancelSessionCommand): Promise<SessionResult>`
-- `SessionNamespace.completeSession(command: CompleteSessionCommand): Promise<SessionResult>`
-- `SessionNamespace.reassignSession(command: ReassignSessionCommand): Promise<SessionResult>`
+- `vectro.session.createSession(command: CreateSessionCommand): Promise<SessionResult>`
+- `vectro.session.cancelSession(command: CancelSessionCommand): Promise<SessionResult>`
+- `vectro.session.completeSession(command: CompleteSessionCommand): Promise<SessionResult>`
+- `vectro.session.reassignSession(command: ReassignSessionCommand): Promise<SessionResult>`
 
 ## 8. Events
 
@@ -91,7 +91,7 @@ interface DispatchSession {
 
 ## 10. Storage Design
 
-- **Session Profile**: `motus:tenant:{tenantId}:session:{sessionId}`
+- **Session Profile**: `tenant:{tenantId}:session:{sessionId}`
   - _Data Structure_: Redis Hash
   - _TTL_: 24 Hours after completion or cancellation.
 
@@ -112,17 +112,18 @@ Consuming backend applications invoke control APIs to create sessions, while dri
 
 ```typescript
 // Creating session
-const session = await motusClient.session.createSession({
+const session = await vectro.session.createSession({
   tenantId,
-  pickup: { latitude: 40.7128, longitude: -74.006 },
+  sessionId: "session-123",
+  pickup: { latitude: 40.7128, longitude: -74.0060 },
   destination: { latitude: 40.7306, longitude: -73.9352 },
-  constraints: { requiredVehicleType: "SEDAN" },
+  requiredVehicleType: "SEDAN",
 });
 
 // Completing session
-await motusClient.session.completeSession({
+await vectro.session.completeSession({
   tenantId,
-  sessionId: session.id,
+  sessionId: "session-123",
 });
 ```
 
@@ -133,7 +134,7 @@ Implement custom transition interceptors inside the `StateMachineManager` to tri
 ## 15. Scaling Considerations
 
 - Ensure that session databases are pruned using TTLs.
-- Partition session tracking rooms by `sessionId` to isolate websocket loads.
+- Partition session tracking rooms by `sessionId` to isolate WebSocket loads.
 
 ## 16. Troubleshooting
 
@@ -143,6 +144,6 @@ Implement custom transition interceptors inside the `StateMachineManager` to tri
 
 ```typescript
 // Inspect session state
-const session = await motusClient.query.getSession(tenantId, sessionId);
+const session = await vectro.query.getSession(tenantId, sessionId);
 console.log("Session state:", session.status); // e.g. DRIVER_ASSIGNED
 ```

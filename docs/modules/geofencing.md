@@ -43,7 +43,7 @@ flowchart LR
 
 Tenant-wide geofences are registered within tenant configuration commands:
 
-- `TenantNamespace.registerTenant(command: RegisterTenantCommand): Promise<TenantResult>`
+- `vectro.tenant.registerTenant(command: RegisterTenantCommand): Promise<TenantResult>`
 
 ## 8. Events
 
@@ -61,8 +61,8 @@ interface GeofenceZone {
 
 ## 10. Storage Design
 
-- **Tenant Profile Hash**: `motus:tenant:{tenantId}:profile` (contains the array of geofence zones).
-- **Driver Location Cache**: `motus:tenant:{tenantId}:driver:{driverId}:location`.
+- **Tenant Profile Hash**: `tenant:{tenantId}:config` (contains the array of geofence zones).
+- **Driver Profile**: `tenant:{tenantId}:driver:{driverId}`.
 
 ## 11. Configuration
 
@@ -74,24 +74,24 @@ interface GeofencingConfig {
 
 ## 12. Integration Guide
 
-Include geofence zones when registering tenants. The core `DriverManager` hooks locations updates automatically into the `GeofenceAuditor`.
+Include geofence zones when registering tenants. The core `DriverManager` hooks location updates automatically into the `GeofenceAuditor`.
 
 ## 13. Step-by-Step Implementation Guide
 
 ```typescript
 // Registering a geofenced zone inside a Tenant
-const tenant = await motusClient.tenant.registerTenant({
+const tenant = await vectro.tenant.registerTenant({
+  tenantId: "tenant-123",
   name: "Airport Delivery Services",
-  matchingConfig: { strategy: "HAVERSINE", maxCandidatesPerWave: 5 },
-  retryPolicy: { waveTimeoutSeconds: 8 },
-  zones: [
+  matchingStrategy: MatchingStrategy.DISTANCE,
+  geofences: [
     {
       name: "Airport Loading Zone",
       boundary: [
-        { latitude: 37.6213, longitude: -122.379 },
-        { latitude: 37.63, longitude: -122.379 },
-        { latitude: 37.63, longitude: -122.36 },
-        { latitude: 37.6213, longitude: -122.36 },
+        { latitude: 37.6213, longitude: -122.3790 },
+        { latitude: 37.6300, longitude: -122.3790 },
+        { latitude: 37.6300, longitude: -122.3600 },
+        { latitude: 37.6213, longitude: -122.3600 },
       ],
     },
   ],

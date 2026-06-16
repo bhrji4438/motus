@@ -16,7 +16,7 @@ Generates a mock driver profile.
 
 Generates a mock dispatch session.
 
-### `buildLocation(overrides?: Partial<Coordinate>): Coordinate`
+### `buildLocation(overrides?: Partial<LocationCoordinate>): LocationCoordinate`
 
 Generates a location coordinate.
 
@@ -28,19 +28,19 @@ Test database commands without a local Docker daemon.
 
 ### `createMockRedisClient()`
 
-Returns a fully mockable in-memory Redis client proxy that tracks geo indexes, keys, and values.
+Returns a mockable in-memory Redis client proxy that tracks keys and values.
 
 ```typescript
 import { createMockRedisClient } from "@motus/testing";
-import { RedisGeoRepository } from "@motus/redis";
+import { RedisDriverRepository } from "@motus/redis";
 
 const mockRedis = createMockRedisClient();
-const repository = new RedisGeoRepository(mockRedis);
+const repository = new RedisDriverRepository(mockRedis);
 ```
 
 ---
 
-## 3. Websocket Mocking Helpers
+## 3. WebSocket Mocking Helpers
 
 Simulate client heartbeats.
 
@@ -52,5 +52,5 @@ Returns a mocked socket emitter to verify room events.
 import { createMockSocketConnection } from "@motus/testing";
 
 const mockSocket = createMockSocketConnection();
-mockSocket.emit("location_update", { lat: 37, lng: -122 });
+mockSocket.emit("join_room", { tenantId: "T1", sessionId: "S1" });
 ```

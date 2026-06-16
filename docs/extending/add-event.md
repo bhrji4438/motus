@@ -77,10 +77,10 @@ await dispatcher.dispatch({
 
 ## Step 4: Register Event Listeners
 
-Subscribers can listen to the event using the `Motus` facade client:
+Subscribers can listen to the event using the public `Vectro` facade client:
 
 ```typescript
-motusClient.events.on("driver.battery.low", (event) => {
+vectro.events.on("driver.battery.low", (event) => {
   console.log(
     `Driver ${event.payload.driverId} has low battery: ${event.payload.batteryPercentage}%`
   );

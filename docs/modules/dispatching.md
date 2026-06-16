@@ -32,7 +32,7 @@ flowchart TD
 
 ## 5. End-to-End Business Flow
 
-1.  Consuming application commands `Motus` to start matching for a session.
+1.  Consuming application commands `Vectro` to start matching for a session.
 2.  `MatchingEngine` queries the spatial index for drivers within the initial radius.
 3.  Filters out busy, paused, stale, or capacity-saturated drivers.
 4.  Ranks the remaining candidates.
@@ -49,8 +49,8 @@ flowchart TD
 
 ## 7. Public APIs
 
-- `DriverNamespace.acceptSessionOffer(tenantId, driverId, sessionId, waveNumber): Promise<void>`
-- `DriverNamespace.rejectSessionOffer(tenantId, driverId, sessionId, waveNumber): Promise<void>`
+- `vectro.driver.acceptSessionOffer(tenantId, driverId, sessionId, waveNumber): Promise<void>`
+- `vectro.driver.rejectSessionOffer(tenantId, driverId, sessionId, waveNumber): Promise<void>`
 
 ## 8. Events
 
@@ -70,9 +70,9 @@ interface WaveDetails {
 
 ## 10. Storage Design
 
-- **Driver Lock**: `motus:tenant:{tenantId}:lock:driver:{driverId}`
+- **Driver Lock**: `lock:candidate:{driverId}:session:{sessionId}`
   - _TTL_: 8 seconds (Value: `{sessionId}`)
-- **Geospatial index**: `motus:tenant:{tenantId}:drivers:locations`
+- **Geospatial Index**: `tenant:{tenantId}:drivers:geo`
 
 ## 11. Configuration
 
@@ -91,7 +91,7 @@ Listen to `dispatch.wave.started` events to push offers via FCM/APNs. Drivers ac
 
 ```typescript
 // Driver accepts trip
-await motusClient.driver.acceptSessionOffer(
+await vectro.driver.acceptSessionOffer(
   tenantId,
   driverId,
   sessionId,
@@ -116,10 +116,10 @@ To write a custom matching strategy (e.g. priority-score ranking), implement the
 
 ```typescript
 // Initiating matching flow
-const session = await motusClient.session.createSession({
+const session = await vectro.session.createSession({
   tenantId,
   pickup: { latitude: 37.7749, longitude: -122.4194 },
   destination: { latitude: 37.7891, longitude: -122.4014 },
-  constraints: { requiredVehicleType: "VIP" },
+  requiredVehicleType: "VIP",
 });
 ```

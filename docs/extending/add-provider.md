@@ -89,8 +89,8 @@ const smsProvider = new TwilioProvider({
 
 const notificationService = new NotificationService({
   providers: [smsProvider],
-  preferenceStore: new InMemoryPreferenceStore(),
-  deliveryTracker: new InMemoryDeliveryTracker(),
+  maxRetries: 3,
+  rateLimitMs: 500,
 });
 ```
 

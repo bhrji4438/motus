@@ -1,12 +1,12 @@
 # @motus/core
 
-Core business engine and domain handlers for the Motus platform.
+Core business engine and domain handlers for the Vectro platform.
 
 ---
 
 ## 1. Purpose
 
-This package houses the business logic, state machines, matching/fanout routing systems, and background workers that coordinate the Motus system. It acts as a pure domain codebase, keeping network framework dependencies decoupled using clean ports interfaces.
+This package houses the business logic, state machines, matching/fanout routing systems, and background workers that coordinate the Vectro system. It acts as a pure domain codebase, keeping network framework dependencies decoupled using clean ports interfaces.
 
 ---
 
@@ -24,7 +24,7 @@ npm install @motus/core
 import { Motus } from "@motus/core";
 import { SystemClock } from "./clock";
 
-// Initialize Motus with injected managers
+// Initialize Vectro engine instance with injected managers
 const motus = new Motus(tenantMgr, driverMgr, sessionMgr, new SystemClock());
 ```
 

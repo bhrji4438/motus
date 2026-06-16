@@ -70,9 +70,9 @@ interface NotificationPayload {
 
 ## 10. Storage Design
 
-- **Preferences Hash**: `motus:tenant:{tenantId}:user:{userId}:preferences`
-- **Tokens Set**: `motus:tenant:{tenantId}:user:{userId}:tokens`
-- _TTL_: Persistent (explicitly managed).
+- **Preferences Hash**: `tenant:{tenantId}:user:{userId}:preferences`
+- **Tokens Set**: `tenant:{tenantId}:user:{userId}:tokens`
+  - _TTL_: Persistent (explicitly managed).
 
 ## 11. Configuration
 
@@ -91,12 +91,12 @@ Provide your provider credentials during initialization. Hook the service up to 
 ## 13. Step-by-Step Implementation Guide
 
 ```typescript
-import { NotificationService } from "@motus/notifications";
+import { NotificationService, FcmProvider } from "@motus/notifications";
 
 const notificationService = new NotificationService({
-  providers: [new FcmProvider({ apiKey: "fcm-key-123" })],
-  preferenceStore: new InMemoryPreferenceStore(),
-  deliveryTracker: new InMemoryDeliveryTracker(),
+  providers: [new FcmProvider({ apiKey: "fcm-key-123", useMock: true })],
+  maxRetries: 3,
+  rateLimitMs: 500,
 });
 ```
 
@@ -111,14 +111,16 @@ Implement the `INotificationProvider` interface to support alternative push or S
 
 ## 16. Troubleshooting
 
-- **Rejected Tokens**: If push alerts fail, verify device tokens are refreshed regularly and that certificates/credentials are valid.
+- **Rejected Tokens**: If push alerts fail, verify device tokens are refreshed regularly and that credentials/certificates are valid.
 
 ## 17. Examples
 
 ```typescript
 // Send notification manually
-await notificationService.sendNotification("driver-123", "new_offer", {
+await notificationService.sendWithTemplate("T1", "driver-123", "new_offer_alert", {
+  driverName: "Sarah",
   sessionId: "S1",
-  pickupName: "Main St.",
+  pickup: "Main St.",
+  waveNumber: "1"
 });
 ```

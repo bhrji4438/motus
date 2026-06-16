@@ -1,24 +1,12 @@
-# API Reference - @motus/core
+# API Reference - SDK Core
 
-This document details the public signatures, namespaces, methods, and configurations of the `@motus/core` package.
+This document details the public signatures, namespaces, methods, and configurations of the Vectro SDK core package.
 
 ---
 
-## 1. Class: Motus
+## 1. Class: Motus (Vectro Instance Facade)
 
 The central facade client coordinating namespaces and state managers.
-
-### Constructor
-
-```typescript
-constructor(
-  tenantMgr: TenantManager,
-  driverMgr: DriverManager,
-  sessionMgr: SessionManager,
-  clock: IClock,
-  eventDispatcher?: any
-)
-```
 
 ### Public Properties
 
@@ -160,7 +148,7 @@ import {
   HTTP_CODE_MAP,
   WEBSOCKET_CODE_MAP,
   isErrorCodeRetryable,
-} from "@motus/core";
+} from "vectro";
 
 // Example: Map domain errors to HTTP statuses
 const statusCode = HTTP_CODE_MAP[error.code] || 500;

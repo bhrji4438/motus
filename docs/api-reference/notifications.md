@@ -11,8 +11,10 @@ The central dispatcher orchestrating targeting, preferences, and provider delive
 ```typescript
 export class NotificationService {
   constructor(options: NotificationServiceOptions);
-  public async sendNotification(
-    userId: string,
+  
+  public async sendWithTemplate(
+    tenantId: string,
+    recipientId: string,
     templateId: string,
     context: Record<string, any>
   ): Promise<NotificationResult>;
@@ -22,8 +24,8 @@ export class NotificationService {
 ### Options Schema
 
 - `providers`: Array of classes implementing `INotificationProvider`.
-- `preferenceStore`: `INotificationPreferenceStore` implementation.
-- `deliveryTracker`: `IDeliveryTracker` implementation.
+- `maxRetries`: Maximum retry attempts on delivery failure.
+- `rateLimitMs`: Delivery throttle interval.
 
 ---
 
@@ -33,7 +35,7 @@ Classes interfacing with push API gateways.
 
 ```typescript
 export interface INotificationProvider {
-  readonly platform: "apns" | "fcm" | "onesignal";
+  readonly platform: "ios" | "android" | "onesignal" | "sms";
   send(
     token: string,
     payload: NotificationPayload
@@ -55,25 +57,32 @@ Handles notification message rendering.
 
 ```typescript
 export class TemplateManager {
-  public registerTemplate(template: INotificationTemplate): void;
+  public register(template: INotificationTemplate): void;
   public render(
     templateId: string,
     context: Record<string, any>
-  ): NotificationPayload;
+  ): { title: string; body: string };
 }
 ```
 
 ---
 
-## 4. Class: UserPreferences (Preference Store)
+## 4. Class: TargetingEngine
 
-Checks opt-in state before triggering messages.
+Tracks push notification device tokens.
 
 ```typescript
-export interface INotificationPreferenceStore {
-  getPreferences(userId: string): Promise<UserPreferences>;
-  savePreferences(userId: string, prefs: UserPreferences): Promise<void>;
+export class TargetingEngine {
+  public async registerToken(
+    tenantId: string,
+    recipientId: string,
+    token: string,
+    platform: "ios" | "android" | "onesignal"
+  ): Promise<void>;
+  
+  public async getTokens(
+    tenantId: string,
+    recipientId: string
+  ): Promise<{ token: string; platform: string }[]>;
 }
 ```
-
-- `InMemoryPreferenceStore`: Fallback implementation.

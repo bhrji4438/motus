@@ -1,6 +1,6 @@
 # @motus/testing
 
-Testing builders, mocks, and container testbeds for the Motus platform.
+Testing builders, mocks, and container testbeds for the Vectro platform.
 
 ---
 

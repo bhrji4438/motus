@@ -63,7 +63,7 @@ interface AuthContext {
 
 ## 10. Storage Design
 
-- **Pub/Sub Channel**: `motus:tenant:{tenantId}:channel:session:{sessionId}:tracking`
+- **Pub/Sub Channel**: `vectro:tenant:{tenantId}:channel:session:{sessionId}:tracking`
 - **Registry Hash**: Transient memory records in Node process heap.
 
 ## 11. Configuration
@@ -78,7 +78,7 @@ interface SocketIOConfig {
 
 ## 12. Integration Guide
 
-Attach the `SocketServer` to your existing HTTP/Fastify framework and implement authentication validation inside `IAuthenticator`.
+Attach the `SocketServer` to your existing HTTP framework and implement authentication validation inside `IAuthenticator`.
 
 ## 13. Step-by-Step Implementation Guide
 
@@ -90,7 +90,6 @@ const server = http.createServer();
 const socketServer = new SocketServer({
   port: 8080,
   path: "/ws",
-  corsOrigin: "*",
 });
 
 socketServer.attach(server);

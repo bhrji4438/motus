@@ -12,9 +12,8 @@ Logistics platforms operate under strict compliance requirements regarding ride 
 
 - State transition audit logging.
 - Role-Based Access Control (RBAC) validations.
-- Secure database storage.
-- CSV data exports.
 - Structured log models.
+- CSV data exports.
 
 ## 4. Architecture Diagram
 
@@ -23,7 +22,7 @@ flowchart LR
     API[REST Dashboard Command] --> RBAC{RbacGuard Auth}
     RBAC -->|Allow| Action[Execute Action]
     Action --> Audit[AuditLogService]
-    Audit --> DB[(Redis Audit Log Index)]
+    Audit --> Store[(Audit Log Store)]
     API -->|Read Logs| Export[CSV Exporter]
 ```
 
@@ -32,7 +31,7 @@ flowchart LR
 1.  User makes an administrative request (e.g. exporting session logs).
 2.  `RbacGuard` verifies the user's role and tenant ID.
 3.  If verified, the command executes and calls `AuditLogService`.
-4.  Logs are appended to a Redis List at key `motus:tenant:{tenantId}:audit:logs`.
+4.  Logs are appended to the `AuditLogService` records.
 5.  Admins can query or export logs to CSV through the Dashboard HTTP server.
 
 ## 6. Core Components
@@ -53,21 +52,22 @@ flowchart LR
 ## 9. Data Models
 
 ```typescript
-interface AuditLogEntry {
+interface AuditRecord {
   id: string;
   tenantId: string;
   userId: string;
+  role: string;
   action: string;
+  targetId?: string;
   timestamp: string;
-  details: Record<string, any>;
+  details?: string;
 }
 ```
 
 ## 10. Storage Design
 
-- **Audit Trail Key**: `motus:tenant:{tenantId}:audit:logs`
-  - _Data Structure_: Redis List (LPUSH)
-  - _TTL_: Persistent
+- **Audit Trail Store**: By default, logs are stored in-memory in the `AuditLogService` buffer.
+- _TTL_: Managed by process lifecycle.
 
 ## 11. Configuration
 
@@ -98,11 +98,11 @@ const csvData = await defaultAuditLog.exportCSV(tenantId);
 
 ## 14. Extension Guide
 
-Implement custom logger backends in `AuditLogService` to stream logs directly to persistent storage (such as Elasticsearch or AWS CloudWatch).
+Implement custom logger backends in `AuditLogService` to stream logs directly to persistent storage (such as Redis Lists, PostgreSQL, Elasticsearch, or AWS CloudWatch).
 
 ## 15. Scaling Considerations
 
-- Configure log limits on the Redis List to prevent unlimited memory growth.
+- Configure log buffer limits in `AuditLogService` to prevent unlimited memory growth.
 - Offload CSV processing to background jobs for large datasets.
 
 ## 16. Troubleshooting
@@ -113,10 +113,12 @@ Implement custom logger backends in `AuditLogService` to stream logs directly to
 
 ```typescript
 // Append audit log manual trigger
-await defaultAuditLog.logAction({
-  tenantId: "tenant-123",
-  userId: "admin-1",
-  action: "tenant.configuration.updated",
-  details: { updatedKey: "matching.initialRadiusMeters", newValue: 3000 },
-});
+await defaultAuditLog.logAction(
+  "tenant-123",
+  "admin-1",
+  "SUPER_ADMIN",
+  "tenant.configuration.updated",
+  "matching.initialRadiusMeters",
+  "Updated initial matching radius to 3000m"
+);
 ```

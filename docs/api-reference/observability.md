@@ -10,8 +10,12 @@ Provides AsyncLocalStorage scopes to propagate correlation IDs across network bo
 
 ```typescript
 export class CorrelationContext {
-  public static run<T>(correlationId: string, fn: () => Promise<T>): Promise<T>;
+  public static run<T>(
+    context: { correlationId: string; tenantId?: string },
+    fn: () => Promise<T>
+  ): Promise<T>;
   public static getCorrelationId(): string | undefined;
+  public static getTenantId(): string | undefined;
 }
 ```
 
@@ -27,7 +31,7 @@ export class Logger {
   public warn(message: string, context?: Record<string, any>): void;
   public error(
     message: string,
-    error?: Error,
+    error?: Error | unknown,
     context?: Record<string, any>
   ): void;
 }
@@ -35,42 +39,28 @@ export class Logger {
 
 ---
 
-## 3. Class: MetricRegistry
-
-OpenTelemetry-compatible gauge and counter accumulator.
-
-```typescript
-export class MetricRegistry {
-  public counter(options: MetricOptions): Counter;
-  public gauge(options: MetricOptions): Gauge;
-  public histogram(options: MetricOptions): Histogram;
-  public getPrometheusMetrics(): Promise<string>;
-}
-```
-
----
-
-## 4. Class: HealthCheckRegistry
+## 3. Class: HealthCheckRegistry
 
 Manages diagnostic probes.
 
 ```typescript
 export class HealthCheckRegistry {
-  public register(name: string, checkFn: HealthCheckFn): void;
-  public runChecks(): Promise<HealthCheckResult[]>;
+  public register(name: string, checkFn: () => Promise<HealthCheckResult>): void;
+  public evaluate(): Promise<{ status: "UP" | "DOWN"; details: Record<string, any> }>;
 }
 
-type HealthCheckFn = () => Promise<HealthCheckResult>;
+interface HealthCheckResult {
+  status: "UP" | "DOWN";
+  details: Record<string, any>;
+  timestamp: string;
+}
 ```
 
 ---
 
-## 5. Instrumentation Hooks
+## 4. Instrumentation Hooks
 
 Automatic middleware interceptors:
 
-- `registerFastifyHooks(fastifyInstance)`: Integrates Fastify servers.
-- `expressMiddleware(req, res, next)`: Integrates Express servers.
-- `DatabaseInstrumenter`: Instruments Redis connection timings.
-- `QueueInstrumenter`: Track Redis streams lags.
-- `EventInstrumenter`: Counts system domain events.
+- `DatabaseInstrumenter`: Instruments Redis/database connection timings.
+- `EventInstrumenter`: Counts system domain events and latency.

@@ -21,7 +21,7 @@ To swap Redis out for an alternative backend (e.g. Memcached, DynamoDB, or Kafka
 
 ### Step A: Implement Interface
 
-Create an implementation conforming to `IDriverRepository` from `@motus/core/ports`:
+Create an implementation conforming to `IDriverRepository` from `@motus/core`:
 
 ```typescript
 import { IDriverRepository, Driver, DriverId, TenantId } from "@motus/core";
@@ -31,7 +31,7 @@ export class DynamoDbDriverRepository implements IDriverRepository {
 
   public async saveDriver(driver: Driver): Promise<void> {
     await this.dynamoClient.put({
-      TableName: "MotusDrivers",
+      TableName: "VectroDrivers",
       Item: driver,
     });
   }
@@ -41,7 +41,7 @@ export class DynamoDbDriverRepository implements IDriverRepository {
     driverId: DriverId
   ): Promise<Driver | null> {
     const res = await this.dynamoClient.get({
-      TableName: "MotusDrivers",
+      TableName: "VectroDrivers",
       Key: { tenantId, id: driverId },
     });
     return (res.Item as Driver) || null;
@@ -51,7 +51,7 @@ export class DynamoDbDriverRepository implements IDriverRepository {
 
 ### Step B: Wire Up Dependencies
 
-When initializing the `Motus` client namespace, pass your custom repository instance to the managers:
+When initializing the Vectro client namespace, pass your custom repository instance to the managers:
 
 ```typescript
 import {
@@ -67,7 +67,7 @@ const dynamoDriverRepo = new DynamoDbDriverRepository(dynamoClient);
 // Instantiate core managers with the custom repository
 const driverManager = new DriverManager(dynamoDriverRepo);
 
-const motusClient = new Motus(
+const vectro = new Motus(
   tenantManager,
   driverManager,
   sessionManager,

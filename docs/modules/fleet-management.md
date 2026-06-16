@@ -41,9 +41,9 @@ flowchart TD
 
 ## 7. Public APIs
 
-- `TenantNamespace.registerTenant(command: RegisterTenantCommand): Promise<TenantResult>`
-- `TenantNamespace.updateTenant(command: UpdateTenantCommand): Promise<TenantResult>`
-- `TenantNamespace.getTenant(tenantId): Promise<TenantResult>`
+- `vectro.tenant.registerTenant(command: RegisterTenantCommand): Promise<TenantResult>`
+- `vectro.tenant.updateTenant(command: UpdateTenantCommand): Promise<TenantResult>`
+- `vectro.tenant.getTenant(tenantId): Promise<TenantResult>`
 
 ## 8. Events
 
@@ -72,7 +72,7 @@ interface TenantProfile {
 
 ## 10. Storage Design
 
-- **Tenant Record Key**: `motus:tenant:{tenantId}:profile`
+- **Tenant Record Key**: `tenant:{${tenantId}}:config`
   - _Data Structure_: Redis Hash
   - _TTL_: Persistent
 
@@ -95,7 +95,7 @@ Create tenants at startup or via administrative configuration panels. Pass the `
 
 ```typescript
 // Register a delivery client
-const tenant = await motusClient.tenant.registerTenant({
+const tenant = await vectro.tenant.registerTenant({
   name: "Express Delivery Services",
   matchingConfig: {
     strategy: "HAVERSINE",
@@ -124,6 +124,6 @@ To integrate with an external database for configurations (e.g., PostgreSQL), im
 
 ```typescript
 // Fetching tenant parameters
-const settings = await motusClient.tenant.getTenant("tenant-1");
-console.log("Max Wave Candidates:", settings.maxCapacityPerDriver);
+const settings = await vectro.tenant.getTenant("tenant-1");
+console.log("Tenant Name:", settings.name);
 ```

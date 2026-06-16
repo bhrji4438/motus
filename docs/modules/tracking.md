@@ -44,8 +44,8 @@ flowchart LR
 
 ## 7. Public APIs
 
-- `DriverNamespace.updateDriverLocation(command: UpdateDriverLocationCommand): Promise<void>`
-  - **Parameters**: `command` (tenantId, driverId, location: {latitude, longitude, bearing, speed, accuracy})
+- `vectro.driver.updateDriverLocation(command: UpdateDriverLocationCommand): Promise<void>`
+  - **Parameters**: `command` (tenantId, driverId, latitude, longitude, timestamp, bearing, speed, accuracy)
   - **Returns**: `void`
   - **Errors**: `InvalidCoordinateError` (if lat/lng is out of bounds).
 
@@ -69,9 +69,8 @@ interface LocationCoordinate {
 
 ## 10. Storage Design
 
-- **Location Hash**: `motus:tenant:{tenantId}:driver:{driverId}:location`
-  - _TTL_: 300s (Auto-expires if heartbeat stops)
-- **Telemetry Stream**: `motus:tenant:{tenantId}:session:{sessionId}:telemetry`
+- **Location Hash**: `tenant:{tenantId}:driver:{driverId}`
+- **Telemetry Stream**: `tenant:{tenantId}:session:{sessionId}:telemetry`
   - _Data Structure_: Redis Stream (XADD)
   - _TTL_: 24 Hours
 
@@ -87,7 +86,7 @@ interface TelemetryConfig {
 
 ## 12. Integration Guide
 
-1. Import `Motus` and configure the telemetry thresholds.
+1. Import `createVectro` and configure the telemetry thresholds.
 2. Hook your socket server up to forward coordinates using `updateDriverLocation`.
 
 ## 13. Step-by-Step Implementation Guide
@@ -95,16 +94,15 @@ interface TelemetryConfig {
 ```typescript
 // Forward incoming GPS update from client connection
 socket.on("location_update", async (data) => {
-  await motusClient.driver.updateDriverLocation({
+  await vectro.driver.updateDriverLocation({
     tenantId: socket.tenantId,
     driverId: socket.driverId,
-    location: {
-      latitude: data.lat,
-      longitude: data.lng,
-      bearing: data.bearing,
-      speed: data.speed,
-      accuracy: data.accuracy,
-    },
+    latitude: data.lat,
+    longitude: data.lng,
+    bearing: data.bearing,
+    speed: data.speed,
+    accuracy: data.accuracy,
+    timestamp: new Date().toISOString()
   });
 });
 ```
@@ -123,7 +121,7 @@ When scaling to 100k+ active drivers:
 ## 16. Troubleshooting
 
 - **GPS Jump Drift**: If GPS jumps, it can trigger incorrect geofences. Filter coordinates with high inaccuracy markers ($\ge 50\text{m}$).
-- **Stale Drivers**: If locations don't expire, verify the 300s TTL is being set on `driver:{driverId}:location`.
+- **Stale Drivers**: If locations don't expire, verify presence pruner workers are running.
 
 ## 17. Examples
 

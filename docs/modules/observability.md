@@ -80,15 +80,12 @@ Register fastify hooks or express middlewares at startup. Bind your Redis client
 ## 13. Step-by-Step Implementation Guide
 
 ```typescript
-import { defaultRegistry } from "@motus/observability";
+import { logger, CorrelationContext } from "@motus/observability";
 
-// Creating a counter metric
-const requestCounter = defaultRegistry.counter({
-  name: "http_requests_total",
-  help: "Total HTTP requests",
+// Using correlation contexts
+await CorrelationContext.run({ correlationId: "tx_abc123", tenantId: "T1" }, async () => {
+  logger.info("Processing driver update transaction");
 });
-
-requestCounter.inc({ method: "GET", route: "/api/sessions" });
 ```
 
 ## 14. Extension Guide
@@ -110,11 +107,12 @@ Implement a custom trace exporter class to redirect traces to alternative APM pl
 // Registering a Redis Health Check
 import { defaultHealthRegistry } from "@motus/observability";
 
-defaultHealthRegistry.register("redis", async () => {
-  const status = await redisClient.ping();
+defaultHealthRegistry.register("redis-health", async () => {
+  const status = "UP"; // mock check
   return {
-    status: status === "PONG" ? "UP" : "DOWN",
-    details: { ping: status },
+    status,
+    details: { pingMs: 1.2 },
+    timestamp: new Date().toISOString()
   };
 });
 ```

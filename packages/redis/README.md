@@ -1,12 +1,12 @@
 # @motus/redis
 
-Redis persistence, caching, and stream event adapter for the Motus platform.
+Redis persistence, caching, and stream event adapter for the Vectro platform.
 
 ---
 
 ## 1. Purpose
 
-Provides low-latency state persistence, geospatial indexing of active driver coordinates, atomic mutex locking (Redlock), and Redis Streams pub/sub event buffers for the Motus core.
+Provides low-latency state persistence, geospatial indexing of active driver coordinates, atomic mutex locking (Redlock), and Redis Streams pub/sub event buffers for the Vectro core.
 
 ---
 

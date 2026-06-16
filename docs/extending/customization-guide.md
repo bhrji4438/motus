@@ -6,7 +6,7 @@ This document describes how to customize dynamic parameters, override matching s
 
 ## 1. Custom Matching Strategy
 
-By default, Motus ranks candidate drivers using straight-line distance calculations (`HAVERSINE`). You can register custom strategies (e.g. ETA routing calculations using OSRM, Valhalla, or Google Maps).
+By default, Vectro ranks candidate drivers using straight-line distance calculations (`HAVERSINE`). You can register custom strategies (e.g. ETA routing calculations using OSRM, Valhalla, or Google Maps).
 
 To write a custom matching strategy:
 
@@ -66,7 +66,7 @@ Available Override Keys:
 
 ## 3. State Machine Interceptors
 
-You can run custom code (e.g. sending webhooks, creating databases records, or updating metrics) whenever a session state machine transitions.
+You can run custom code (e.g. sending webhooks, creating database records, or updating metrics) whenever a session state machine transitions.
 
 Hook custom listeners into the `StateMachineManager` in `@motus/core`:
 
@@ -105,7 +105,7 @@ import pinotPromise from "pino-elasticsearch";
 
 const esStream = pinotPromise({
   node: "http://localhost:9200",
-  index: "motus-logs",
+  index: "vectro-logs",
 });
 
 const appLogger = new Logger({

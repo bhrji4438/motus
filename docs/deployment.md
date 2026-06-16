@@ -1,6 +1,6 @@
-# Production Deployment Guide - Motus Platform
+# Production Deployment Guide - Vectro Platform
 
-This document describes how to deploy the Motus platform in production environments, covering horizontal scaling, Redis Cluster sharding, sticky load balancing, cleanup workers, and security settings.
+This document describes how to deploy the Vectro platform in production environments, covering horizontal scaling, Redis Cluster sharding, sticky load balancing, cleanup workers, and security settings.
 
 ---
 
@@ -18,7 +18,7 @@ For high availability and linear scaling, configure a Redis Cluster.
 
 ### Config Options
 
-Within `@motus/redis`, configuration is defined in the connection config. Ensure you set the nodes parameters:
+Within the Vectro configuration, parameters are defined in the connection config. Ensure you set the nodes parameters:
 
 ```env
 REDIS_MODE=cluster
@@ -38,12 +38,12 @@ REDIS_PASSWORD=your-secure-redis-auth-token
 
 ## 3. WebSocket Sticky Load Balancing
 
-Because Socket.IO clients maintain persistent websocket connections and utilize namespaces/rooms, ensure your ingress proxy (e.g. HAProxy, Nginx, or AWS ALB) terminates SSL and balances connections with **sticky sessions**.
+Because Socket.IO clients maintain persistent WebSocket connections and utilize namespaces/rooms, ensure your ingress proxy (e.g. HAProxy, Nginx, or AWS ALB) terminates SSL and balances connections with **sticky sessions**.
 
 ### HAProxy Sample Configuration
 
 ```haproxy
-backend motus_websocket_servers
+backend vectro_websocket_servers
     mode http
     balance roundrobin
     cookie SERVERID insert indirect nocache
@@ -54,7 +54,7 @@ backend motus_websocket_servers
 ### Nginx Sample Configuration
 
 ```nginx
-upstream motus_servers {
+upstream vectro_servers {
     ip_hash;
     server 10.0.0.10:8080;
     server 10.0.0.11:8080;
@@ -62,10 +62,10 @@ upstream motus_servers {
 
 server {
     listen 443 ssl;
-    server_name api.motus-platform.org;
+    server_name api.vectro-platform.org;
 
     location / {
-        proxy_pass http://motus_servers;
+        proxy_pass http://vectro_servers;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";

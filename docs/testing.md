@@ -1,4 +1,4 @@
-# Testing Guide - Motus Platform
+# Testing Guide - Vectro Platform
 
 This document describes how to execute unit, integration, and performance tests, configure testing tools, and utilize the `@motus/testing` utilities.
 

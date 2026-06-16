@@ -6,7 +6,7 @@ Logging, metrics collection, tracing, and health check diagnostics.
 
 ## 1. Purpose
 
-Provides OpenTelemetry spans, metrics, log correlations, diagnostics, and hooks to monitor the Motus platform in production.
+Provides OpenTelemetry spans, metrics, log correlations, diagnostics, and hooks to monitor the Vectro platform in production.
 
 ---
 
@@ -23,7 +23,7 @@ npm install @motus/observability
 ```typescript
 import { logger } from "@motus/observability";
 
-logger.info("Starting Motus application...");
+logger.info("Starting Vectro application...");
 ```
 
 ---

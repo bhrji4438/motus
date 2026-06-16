@@ -62,14 +62,14 @@ interface StreamEntry {
 
 ## 10. Storage Design
 
-- **Event Queue Stream Key**: `motus:tenant:{tenantId}:events:stream`
+- **Event Queue Stream Key**: `vectro:tenant:{tenantId}:events:stream`
 - _TTL_: Managed by stream limits or 24-hour retention.
 
 ## 11. Configuration
 
 ```typescript
 interface RedisStreamsConfig {
-  defaultGroupName: string; // Default: "motus_consumers"
+  defaultGroupName: string; // Default: "vectro_consumers"
   maxStreamLength: number; // Default: 10000 (auto-trimming)
 }
 ```
@@ -85,7 +85,7 @@ Deploy workers as separate daemons. Configure the `RedisStreamsAdapter` to targe
 const streamAdapter = new RedisStreamsAdapter(clientManager);
 setInterval(async () => {
   const entries = await streamAdapter.readGroup(
-    "motus:events:stream",
+    "vectro:events:stream",
     "outbox_group",
     "worker_1",
     { count: 10, blockMs: 2000 }
@@ -93,7 +93,7 @@ setInterval(async () => {
   for (const entry of entries) {
     // Process entry
     await streamAdapter.acknowledge(
-      "motus:events:stream",
+      "vectro:events:stream",
       "outbox_group",
       entry.id
     );
@@ -119,7 +119,7 @@ To use a different queue broker (e.g., RabbitMQ or BullMQ), implement a custom a
 ```typescript
 // Appending a message to a Redis Stream
 const messageId = await streamAdapter.appendToStream(
-  "motus:tenant:T1:session:S1:events",
+  "vectro:tenant:T1:session:S1:events",
   { eventType: "session.created", payload: JSON.stringify({ id: "S1" }) }
 );
 ```

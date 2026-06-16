@@ -1,12 +1,12 @@
 # @motus/types
 
-Shared TypeScript type contracts and domain models for the Motus platform.
+Shared TypeScript type contracts and domain models for the Vectro platform.
 
 ---
 
 ## 1. Purpose
 
-Defines the core data contracts, interfaces, and enums for the Motus monorepo packages, establishing domain definitions and schema validation constraints.
+Defines the core data contracts, interfaces, and enums for the Vectro monorepo packages, establishing domain definitions and schema validation constraints.
 
 ---
 

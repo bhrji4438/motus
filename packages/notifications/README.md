@@ -1,6 +1,6 @@
 # @motus/notifications
 
-Unified push notifications and templates dispatcher for the Motus platform.
+Unified push notifications and templates dispatcher for the Vectro platform.
 
 ---
 

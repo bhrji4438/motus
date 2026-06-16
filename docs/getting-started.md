@@ -1,120 +1,98 @@
-# Getting Started with Motus
+# Getting Started with Vectro
 
-This guide provides a step-by-step tutorial on integrating the Motus engine into your platform, covering installation, SDK initialization, tenant registration, driver presence management, and dispatch session lifecycles.
+This guide provides a step-by-step tutorial on integrating the Vectro engine into your platform, covering installation, SDK initialization, tenant registration, driver presence management, and dispatch session lifecycles.
 
 ---
 
 ## 1. Installation
 
-To use the Motus core SDK, add it to your project along with the peer dependencies (e.g. `ioredis`):
+To get started with Vectro, add the public SDK package to your project:
 
 ```bash
-npm install @motus/core @motus/redis ioredis
+npm install vectro
 ```
 
 ---
 
-## 2. Initialize the Motus Client
+## 2. Initialize the Vectro Client
 
-The main entrance to the SDK is the `Motus` facade client. Initialize it by setting up the underlying Redis connection managers, repositories, and managers.
+The main entrance to Vectro is the client instance returned by `createVectro`. It boots up the underlying connection pools, dynamic Redis namespaces, event bus, and Socket.IO server endpoints.
 
 ```typescript
-import Redis from "ioredis";
-import { Motus, ConfigurationManager } from "@motus/core";
-import {
-  RedisClientManager,
-  RedisTenantRepository,
-  RedisDriverRepository,
-  RedisSessionRepository,
-  RedisPresenceRepository,
-} from "@motus/redis";
+import { createVectro } from "vectro";
 
-// 1. Initialize Redis connection
-const redisClient = new Redis({
-  host: "127.0.0.1",
-  port: 6379,
+// Initialize Vectro platform
+const vectro = await createVectro({
+  redis: {
+    host: "127.0.0.1",
+    port: 6379,
+    keyPrefix: "vectro" // Default prefix (use 'motus' for legacy compatibility)
+  },
+  socketio: {
+    port: 3000 // Starts a Socket.IO WebSocket gateway server on port 3000
+  }
 });
-
-// 2. Initialize Motus Redis Repositories
-const clientManager = new RedisClientManager(redisClient);
-const tenantRepository = new RedisTenantRepository(clientManager);
-const driverRepository = new RedisDriverRepository(clientManager);
-const sessionRepository = new RedisSessionRepository(clientManager);
-const presenceRepository = new RedisPresenceRepository(clientManager);
-
-// 3. Initialize Motus client namespace handlers
-const motusClient = new Motus(
-  tenantRepository,
-  driverRepository,
-  sessionRepository,
-  new SystemClock()
-);
 ```
 
 ---
 
 ## 3. Register a Tenant
 
-Every driver, session, and configuration in Motus resides within a Tenant boundary. Register your tenant:
+Every driver, session, and configuration in Vectro resides within a Tenant boundary. Register your tenant:
 
 ```typescript
-const tenantResult = await motusClient.tenant.registerTenant({
+import { MatchingStrategy } from "vectro";
+
+const tenantResult = await vectro.tenant.registerTenant({
+  tenantId: "tnt_global_logistics",
   name: "Global Logistics Inc",
-  matchingConfig: {
-    strategy: "HAVERSINE",
-    maxCandidatesPerWave: 5,
-  },
-  retryPolicy: {
-    waveTimeoutSeconds: 8,
-  },
-  zones: [
+  matchingStrategy: MatchingStrategy.DISTANCE,
+  geofences: [
     {
       name: "Downtown Zone",
       boundary: [
-        { latitude: 40.7128, longitude: -74.006 },
-        { latitude: 40.72, longitude: -74.006 },
-        { latitude: 40.72, longitude: -73.99 },
-        { latitude: 40.7128, longitude: -73.99 },
+        { latitude: 40.7128, longitude: -74.0060 },
+        { latitude: 40.7200, longitude: -74.0060 },
+        { latitude: 40.7200, longitude: -73.9900 },
+        { latitude: 40.7128, longitude: -73.9900 },
       ],
     },
   ],
+  idempotencyKey: "tnt_reg_key_101"
 });
 
-console.log("Registered Tenant:", tenantResult.tenantId);
+console.log("Registered Tenant Workspace:", tenantResult.tenantId);
 ```
 
 ---
 
 ## 4. Onboard and Manage Drivers
 
-Before a driver can accept trip offers, register them and mark their presence status as `ONLINE`:
+Before a driver can accept trip offers, register them and transition their status to `ONLINE`:
 
 ```typescript
-const tenantId = tenantResult.tenantId;
+const tenantId = "tnt_global_logistics";
+const driverId = "driver-courier-john";
 
-// 1. Register the driver
-const driverResult = await motusClient.driver.registerDriver({
-  tenantId,
-  capacity: 1,
-  vehicleType: "SEDAN",
-});
-
-const driverId = driverResult.id;
-
-// 2. Transition driver to ONLINE status
-await motusClient.driver.setDriverOnline(tenantId, driverId);
-
-// 3. Update driver location coordinate (enables spatial matching)
-await motusClient.driver.updateDriverLocation({
+// 1. Register driver capabilities
+await vectro.driver.registerDriver({
   tenantId,
   driverId,
-  location: {
-    latitude: 40.7135,
-    longitude: -74.001,
-    accuracy: 5,
-    bearing: 90,
-    speed: 12,
-  },
+  capacity: 1, // Max concurrent sessions the driver can handle
+  vehicleType: "SEDAN",
+  idempotencyKey: "drv_reg_key_101"
+});
+
+// 2. Transition driver to ONLINE (makes driver eligible for wave matching)
+await vectro.driver.setDriverOnline(tenantId, driverId);
+
+// 3. Update driver location coordinate (enables spatial indexing)
+await vectro.driver.updateDriverLocation({
+  tenantId,
+  driverId,
+  latitude: 40.7135,
+  longitude: -74.0010,
+  timestamp: new Date().toISOString()
 });
 ```
 
@@ -122,39 +100,52 @@ await motusClient.driver.updateDriverLocation({
 
 ## 5. Create a Dispatch & Tracking Session
 
-When a customer books a ride, create a session to search, rank, and progressive-wave offer the ride to candidates:
+When a customer books a ride, create a session to search, rank, and offer the ride to candidates in progressive waves:
 
 ```typescript
 // 1. Initialize session
-const sessionResult = await motusClient.session.createSession({
+const sessionResult = await vectro.session.createSession({
   tenantId,
-  pickup: { latitude: 40.713, longitude: -74.002 },
+  sessionId: "session-ride-88",
+  pickup: { latitude: 40.7130, longitude: -74.0020 },
   destination: { latitude: 40.7306, longitude: -73.9352 },
-  constraints: {
-    requiredVehicleType: "SEDAN",
-  },
+  requiredVehicleType: "SEDAN",
+  idempotencyKey: "ses_reg_key_101"
 });
 
-const sessionId = sessionResult.id;
-
 // 2. Start the dispatch matching loop
-// Motus will query ONLINE drivers within the tenant's geo index and push notifications.
-console.log("Session matching started. Session ID:", sessionId);
+// Vectro will query ONLINE drivers within the tenant's geo index and push notifications.
+console.log("Session matching started. Session ID:", sessionResult.id);
 ```
 
 ---
 
-## 6. Subscribe to Realtime Updates
+## 6. Subscribe to Real-Time Updates
 
+### Back-End Event Stream
+Listen to domain events directly in your node.js service:
+
+```typescript
+vectro.events.on("dispatch.wave.started", (event) => {
+  const { sessionId, candidates, waveNumber } = event.payload as any;
+  console.log(`Wave #${waveNumber} started for session ${sessionId}. Candidates: ${candidates.join(",")}`);
+});
+
+vectro.events.on("session.assigned", (event) => {
+  console.log(`Session ${event.payload.sessionId} assigned to driver ${event.payload.assignedDriverId}`);
+});
+```
+
+### Client Room Connection (WebSockets)
 Clients (such as passenger apps) can subscribe to session channels to receive live driver coordinate updates:
 
 ```typescript
 import { io } from "socket.io-client";
 
-const socket = io("https://api.motus-platform.org/sessions");
+const socket = io("https://api.vectro-platform.org/sessions");
 
 // Join the tracking room for the active session
-socket.emit("join_room", { tenantId, sessionId });
+socket.emit("join_room", { tenantId, sessionId: "session-ride-88" });
 
 // Listen for live location updates
 socket.on("tracking_broadcast", (locationUpdate) => {
@@ -164,4 +155,14 @@ socket.on("tracking_broadcast", (locationUpdate) => {
     locationUpdate.longitude
   );
 });
+```
+
+---
+
+## 7. Graceful Shutdown
+
+To close connection pools and terminate background worker intervals:
+
+```typescript
+await vectro.stop();
 ```

@@ -1,12 +1,12 @@
-# System Architecture - Motus Platform
+# System Architecture - Vectro Platform
 
-This document describes the technical architecture, package boundaries, data models, state machines, storage designs, and recovery mechanisms that power the Motus platform.
+This document describes the technical architecture, package boundaries, data models, state machines, storage designs, and recovery mechanisms that power the Vectro platform.
 
 ---
 
 ## 1. System Topology & Domain Contexts
 
-Motus operates as a low-latency, real-time cache and event orchestrator sitting alongside, but decoupled from, your primary persistent transactional databases (RDBMS / Document DB).
+Vectro operates as a low-latency, real-time cache and event orchestrator sitting alongside, but decoupled from, your primary persistent transactional databases (RDBMS / Document DB).
 
 ```mermaid
 flowchart TB
@@ -19,7 +19,7 @@ flowchart TB
         Proxy["HAProxy / Nginx\n(Sticky Sessions)"]
     end
 
-    subgraph AppServer [Motus Engine Servers]
+    subgraph AppServer [Vectro Engine Servers]
         SocketServer["SocketIO Server\n(@motus/socketio)"]
         CoreLib["Core Engine\n(@motus/core)"]
         RedisAdapter["Redis Repository\n(@motus/redis)"]
@@ -78,7 +78,7 @@ Validates spatial coordinates against boundary definitions.
 
 ## 3. Package Boundaries & Dependency Flow
 
-Motus strictly enforces package isolation to ensure circular dependencies do not occur. The package hierarchy is structured as follows:
+Vectro strictly enforces package isolation to ensure circular dependencies do not occur. The internal package hierarchy is structured as follows:
 
 ```mermaid
 flowchart TD
@@ -90,6 +90,12 @@ flowchart TD
     Obs[@motus/observability]
     Testing[@motus/testing]
     Types[@motus/types]
+    VectroSDK[vectro sdk facade]
+
+    VectroSDK --> Core
+    VectroSDK --> Redis
+    VectroSDK --> SocketIO
+    VectroSDK --> Obs
 
     Dashboard --> Core
     SocketIO --> Core
@@ -102,6 +108,7 @@ flowchart TD
     Testing --> Redis
 ```
 
+- **`vectro` (packages/sdk)**: The public developer facade SDK package. Consolidates all core and transport features, providing the unified `createVectro` bootstrapper.
 - **`@motus/types`**: Bottom of the chain. Contains strictly types, interfaces, enums, value objects, and schemas. Zero package dependencies.
 - **`@motus/observability`**: Contains logger interfaces, tracer configurations, metrics registries, and diagnostic health checks. Depends only on `@motus/types`.
 - **`@motus/redis`**: Contains the Redis storage repositories, Lua scripts, and client configuration handlers. It depends _only_ on `@motus/types` and `@motus/core` ports interfaces.
@@ -121,23 +128,34 @@ All transient real-time states are stored in Redis to achieve sub-millisecond la
 To support Redis Cluster sharding without cross-slot command errors, all keys incorporate **hash tags** (`{...}`) to force co-location of tenant-specific structures:
 
 ```
-motus:tenant:{tenantId}:driver:{driverId}:presence
-motus:tenant:{tenantId}:driver:{driverId}:location
-motus:tenant:{tenantId}:session:{sessionId}:state
-motus:tenant:{tenantId}:session:{sessionId}:telemetry
+tenant:{tenantId}:config
+tenant:{tenantId}:driver:{driverId}
+tenant:{tenantId}:session:{sessionId}
+tenant:{tenantId}:session:{sessionId}:telemetry
 ```
 
-### B. Redis Data Structures
+### B. Global Expiry and Shared Keys
+
+Shared registry keys are prefixed with a configurable namespace:
+
+```
+<keyPrefix>:sessions:expiry
+<keyPrefix>:<tenantId>:events:<eventName>
+```
+
+By default, the prefix is `"vectro"`. Legacy deployments can specify `"motus"` to match historical records and prevent breaking changes.
+
+### C. Redis Data Structures
 
 - **Presence Status:** Managed as a `Hash` with fields `status`, `previousPresenceStatus`, `currentLoad`, `capacity`, and `lastHeartbeat`.
-- **Locations Spatial Index:** Stored in a Redis `Geo Set` (Sorted Set) at key `motus:tenant:{tenantId}:drivers:locations`.
+- **Locations Spatial Index:** Stored in a Redis `Geo Set` (Sorted Set) at key `tenant:{tenantId}:drivers:geo`.
 - **Session State:** Stored as a `Hash` detailing the lifecycle status and active driver assignment.
 - **Telemetry Path:** Buffered using `Redis Streams` for chronological, high-efficiency appends.
 - **Offer Reservation Lock:** Stored as a `String` representing a Redlock lock for candidate exclusion.
 
-### C. Eviction Policy
+### D. Eviction Policy
 
-Motus mandates `noeviction`. Since Redis maintains critical state machine states, any out-of-memory key evictions would break session guarantees. Cluster scaling and short TTL policies (24 hours on completed trips, 5 minutes on offline driver location hashes) are used to manage memory.
+Vectro mandates `maxmemory-policy noeviction`. Since Redis maintains critical state machine states, any out-of-memory key evictions would break session guarantees. Cluster scaling and short TTL policies (24 hours on completed trips, 5 minutes on offline driver location hashes) are used to manage memory.
 
 ---
 
@@ -196,11 +214,11 @@ stateDiagram-v2
 
 ---
 
-## 6. Real-time Websockets & Event outbox
+## 6. Real-time WebSockets & Event Outbox
 
-### A. Socket.IO Transport Gateways
+### A. Socket.IO Gateway
 
-Websocket connections are segmented using dedicated namespaces:
+WebSocket connections are segmented using dedicated namespaces:
 
 - **`/drivers`**: Location heartbeat ingestion, offer notification channels, and acceptance commands.
 - **`/sessions`**: Subscription rooms for consumers/customers to stream real-time coordinate broadcasts.

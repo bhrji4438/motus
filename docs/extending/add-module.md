@@ -1,6 +1,6 @@
 # How to Add a New Business Module
 
-This guide describes how to add a new business module to `@motus/core` and expose it through the public namespaces.
+This guide describes how to add a new business module to the core engine and expose it through the public namespaces.
 
 ---
 
@@ -56,19 +56,21 @@ export class BillingNamespace {
 
 ---
 
-## Step 4: Register Namespace in Motus Client
+## Step 4: Register Namespace in Client Facade
 
-Update `packages/core/src/public/Motus.ts`:
+Update the main engine facade (`Motus` class in `packages/core/src/public/Motus.ts`):
 
 1.  Import your new namespace.
 2.  Add a public readonly property (e.g. `public readonly billing: BillingNamespace`).
 3.  Instantiate it within the constructor and assign dependencies.
 
+Expose the namespace in the public `VectroInstance` facade interface returned by `createVectro` inside `packages/sdk/src/factory.ts`.
+
 ---
 
 ## Step 5: Export from Package Index
 
-Export the namespace facade from `packages/core/src/index.ts`:
+Export the namespace facade from `packages/core/src/index.ts` and re-export it in `packages/sdk/src/index.ts`:
 
 ```typescript
 export { BillingNamespace } from "@/public/BillingNamespace.js";

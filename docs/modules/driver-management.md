@@ -31,7 +31,7 @@ stateDiagram-v2
 
 ## 5. End-to-End Business Flow
 
-1.  Driver profile is registered in Motus specifying load capacity.
+1.  Driver profile is registered in Vectro specifying load capacity.
 2.  Driver transitions to `ONLINE` and streams heartbeats.
 3.  Each heartbeat updates the `lastHeartbeat` timestamp in Redis.
 4.  If no heartbeats are received for 120 seconds, the `DriverStaleDetector` marks the driver as `STALE`.
@@ -46,10 +46,10 @@ stateDiagram-v2
 
 ## 7. Public APIs
 
-- `DriverNamespace.registerDriver(command: RegisterDriverCommand): Promise<DriverResult>`
-- `DriverNamespace.setDriverOnline(tenantId, driverId): Promise<void>`
-- `DriverNamespace.setDriverOffline(tenantId, driverId): Promise<void>`
-- `DriverNamespace.setDriverPaused(tenantId, driverId): Promise<void>`
+- `vectro.driver.registerDriver(command: RegisterDriverCommand): Promise<DriverResult>`
+- `vectro.driver.setDriverOnline(tenantId, driverId): Promise<void>`
+- `vectro.driver.setDriverOffline(tenantId, driverId): Promise<void>`
+- `vectro.driver.setDriverPaused(tenantId, driverId): Promise<void>`
 
 ## 8. Events
 
@@ -71,7 +71,7 @@ interface DriverPresenceProfile {
 
 ## 10. Storage Design
 
-- **Driver Presence Key**: `motus:tenant:{tenantId}:driver:{driverId}:presence`
+- **Driver Presence Key**: `tenant:{tenantId}:driver:{driverId}`
   - _Data Structure_: Redis Hash
   - _TTL_: 24 Hours (sliding window)
 
@@ -94,7 +94,7 @@ Sync driver state changes with socket connect/disconnect handlers:
 
 ```typescript
 // Onboarding driver
-const newDriver = await motusClient.driver.registerDriver({
+const newDriver = await vectro.driver.registerDriver({
   tenantId: "tenant-123",
   capacity: 1,
   vehicleType: "SEDAN",
@@ -118,6 +118,6 @@ Implement the custom capabilities validation helper to add attributes like langu
 
 ```typescript
 // Query driver presence status
-const driver = await motusClient.driver.getDriver("tenant-1", "driver-123");
+const driver = await vectro.driver.getDriver("tenant-1", "driver-123");
 console.log("Driver status:", driver.status); // e.g. ONLINE
 ```

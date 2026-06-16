@@ -1,6 +1,6 @@
 # Changelog
 
-This changelog tracks major high-level releases and milestones of the Motus monorepo platform. Detailed change histories for individual packages can be found in their respective package directories.
+This changelog tracks major high-level releases and milestones of the Vectro platform. Detailed change histories for individual packages can be found in their respective package directories.
 
 ---
 
@@ -15,6 +15,7 @@ This changelog tracks major high-level releases and milestones of the Motus mono
 - Observability package including OpenTelemetry tracer hooks, Prometheus metrics registries, correlation context, and diagnostic health checks.
 - Monorepo developer dashboard including Fastify server endpoints, Server-Sent Events (SSE) tracking feeds, and React real-time views.
 - Testing infrastructure package with Redis container testbeds, websocket client mocks, and mutation tests.
+- Rebranded public SDK package (`vectro`) supporting dynamic Redis key prefixes.
 
 ---
 

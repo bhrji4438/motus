@@ -1,83 +1,83 @@
-# Product Workflows & Data Flows - Motus Platform
+# Product Workflows & Data Flows - Vectro Platform
 
-This document describes the end-to-end business workflows, module interactions, data lifecycles, and realtime communication paths of the Motus engine.
+This document describes the end-to-end business workflows, module interactions, data lifecycles, and real-time communication paths of the Vectro engine.
 
 ---
 
 ## 1. End-to-End Dispatch Lifecycle Workflow
 
-The core purpose of Motus is coordinating driver locations and dispatch sessions. Below is the complete sequence of events from driver onboarding to trip completion:
+The core purpose of Vectro is coordinating driver locations and dispatch sessions. Below is the complete sequence of events from driver onboarding to trip completion:
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor Driver
     participant App as Consuming App
-    participant Motus as Motus Engine
+    participant Vectro as Vectro Engine
     participant Redis as Redis Cache
     actor Passenger
 
     Note over Driver, Redis: Step A: Presence & Tracking
-    Driver->>Motus: Connect to /drivers WebSocket Namespace
-    Motus->>Redis: Set driver presence status to ONLINE
-    Driver->>Motus: Stream location coordinate update {lat, lng}
-    Motus->>Redis: Update active-locations geo index (GEOADD)
-    Motus->>Redis: Store coordinate in driver:location hash (TTL 300s)
+    Driver->>Vectro: Connect to /drivers WebSocket Namespace
+    Vectro->>Redis: Set driver presence status to ONLINE
+    Driver->>Vectro: Stream location coordinate update {lat, lng}
+    Vectro->>Redis: Update active-locations geo index (GEOADD)
+    Vectro->>Redis: Store coordinate in driver:location hash (TTL 300s)
 
-    Note over Passenger, Motus: Step B: Booking & Matching Session
+    Note over Passenger, Vectro: Step B: Booking & Matching Session
     Passenger->>App: Book a Ride
-    App->>Motus: Create Session (sessionId, pickupCoord, destCoord, filters)
-    Motus->>Redis: Create session hash state: CREATED
-    Motus-->>App: Event: session.created
+    App->>Vectro: Create Session (sessionId, pickupCoord, destCoord, filters)
+    Vectro->>Redis: Create session hash state: CREATED
+    Vectro-->>App: Event: session.created
 
-    Motus->>Motus: Transition state to SEARCHING
-    Motus->>Redis: Query nearby ONLINE drivers in GEO index (GEORADIUS)
-    Motus->>Motus: Apply filters (capacity, vehicleType, freshness)
-    Motus->>Motus: Rank candidates by distance/ETA
+    Vectro->>Vectro: Transition state to SEARCHING
+    Vectro->>Redis: Query nearby ONLINE drivers in GEO index (GEORADIUS)
+    Vectro->>Vectro: Apply filters (capacity, vehicleType, freshness)
+    Vectro->>Vectro: Rank candidates by distance/ETA
 
     rect rgb(240, 240, 240)
-        Note over Motus, Driver: Step C: Progressive Wave Offering
-        Motus->>Redis: Set Wave Offer Lock on candidate (driverId: lock)
-        Motus-->>App: Event: dispatch.wave.started (notified candidate list)
+        Note over Vectro, Driver: Step C: Progressive Wave Offering
+        Vectro->>Redis: Set Wave Offer Lock on candidate (driverId: lock)
+        Vectro-->>App: Event: dispatch.wave.started (notified candidate list)
         App->>Driver: Notify Push Offer (FCM/APNs)
 
         alt Driver Accepts Offer
-            Driver->>Motus: Submit Accept Command (driverId, sessionId, waveNumber)
-            Motus->>Redis: Validate and acquire lock atomically (Lua script check)
-            Motus->>Redis: Transition driver presence to BUSY
-            Motus->>Redis: Transition session state to DRIVER_ASSIGNED
-            Motus-->>App: Event: session.assigned
+            Driver->>Vectro: Submit Accept Command (driverId, sessionId, waveNumber)
+            Vectro->>Redis: Validate and acquire lock atomically (Lua script check)
+            Vectro->>Redis: Transition driver presence to BUSY
+            Vectro->>Redis: Transition session state to DRIVER_ASSIGNED
+            Vectro-->>App: Event: session.assigned
         else Wave Expirations (8s Timeout)
-            Motus->>Redis: Release lock
-            Motus->>Motus: Increment waveNumber, fetch next batch, start Wave 2
+            Vectro->>Redis: Release lock
+            Vectro->>Vectro: Increment waveNumber, fetch next batch, start Wave 2
         end
     end
 
     Note over Driver, Passenger: Step D: Transit & Telemetry Ingestion
-    Driver->>Motus: Transition state to DRIVER_EN_ROUTE
-    Driver->>Motus: Stream locations during transit
-    Motus->>Motus: Telemetry Sampler filters points (10s or 25m check)
-    Motus->>Redis: Stream coordinate append (XADD session:telemetry)
-    Motus->>Redis: Publish coordinate to session room channel (Redis Pub/Sub)
-    Motus-->>Passenger: Realtime WebSocket coordinate broadcast
+    Driver->>Vectro: Transition state to DRIVER_EN_ROUTE
+    Driver->>Vectro: Stream locations during transit
+    Vectro->>Vectro: Telemetry Sampler filters points (10s or 25m check)
+    Vectro->>Redis: Stream coordinate append (XADD session:telemetry)
+    Vectro->>Redis: Publish coordinate to session room channel (Redis Pub/Sub)
+    Vectro-->>Passenger: Realtime WebSocket coordinate broadcast
 
-    Driver->>Motus: Transition state to ARRIVED (at pickup)
-    Driver->>Motus: Transition state to IN_PROGRESS (trip starts)
-    Driver->>Motus: Transition state to COMPLETED (trip ends)
+    Driver->>Vectro: Transition state to ARRIVED (at pickup)
+    Driver->>Vectro: Transition state to IN_PROGRESS (trip starts)
+    Driver->>Vectro: Transition state to COMPLETED (trip ends)
 
-    Note over Motus, App: Step E: Archival & Cleanup
-    Motus-->>App: Event: session.completed
-    Motus->>Redis: Read entire telemetry path stream & compile summary report
-    Motus->>App: Deliver Session Report (telemetry path, logs, timestamps)
-    Motus->>Redis: Prune transient session and telemetry stream (TTL 24h)
-    Motus->>Redis: Reset driver presence status to ONLINE
+    Note over Vectro, App: Step E: Archival & Cleanup
+    Vectro-->>App: Event: session.completed
+    Vectro->>Redis: Read entire telemetry path stream & compile summary report
+    Vectro->>App: Deliver Session Report (telemetry path, logs, timestamps)
+    Vectro->>Redis: Prune transient session and telemetry stream (TTL 24h)
+    Vectro->>Redis: Reset driver presence status to ONLINE
 ```
 
 ---
 
 ## 2. Platform Request Lifecycle
 
-Requests entering the Motus system flow through two distinct channels:
+Requests entering the Vectro system flow through two distinct channels:
 
 ### A. Control Path (REST API / Admin Commands)
 
@@ -102,10 +102,10 @@ To support scaling across multiple server pods, live tracking coordinates are br
 
 ```mermaid
 flowchart LR
-    DriverApp["Driver Client App"] -->|Socket: location_update| Pod1["Motus Socket Pod A"]
-    CustomerApp["Customer Client App"] -->|Socket: join_room sessionId| Pod2["Motus Socket Pod B"]
+    DriverApp["Driver Client App"] -->|Socket: location_update| Pod1["Vectro Socket Pod A"]
+    CustomerApp["Customer Client App"] -->|Socket: join_room sessionId| Pod2["Vectro Socket Pod B"]
 
-    Pod1 -->|Redis Pub/Sub: publish tracking channel| RedisPubSub(("Redis Pub/Sub\n(motus:tenant...channel)"))
+    Pod1 -->|Redis Pub/Sub: publish tracking channel| RedisPubSub(("Redis Pub/Sub\n(vectro:tenant...channel)"))
     RedisPubSub -->|Subscribe| Pod2
     Pod2 -->|Socket: tracking_broadcast| CustomerApp
 ```

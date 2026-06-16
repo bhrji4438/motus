@@ -38,18 +38,14 @@ Standard arguments submitted to SDK namespaces:
 
 ```typescript
 interface RegisterTenantCommand {
+  tenantId: string;
   name: string;
-  matchingConfig: {
-    strategy: "HAVERSINE" | "OSRM";
-    maxCandidatesPerWave: number;
-  };
-  retryPolicy: {
-    waveTimeoutSeconds: number;
-  };
-  zones?: {
+  matchingStrategy: MatchingStrategy;
+  geofences?: {
     name: string;
     boundary: { latitude: number; longitude: number }[];
   }[];
+  idempotencyKey?: string;
 }
 ```
 
@@ -58,8 +54,10 @@ interface RegisterTenantCommand {
 ```typescript
 interface RegisterDriverCommand {
   tenantId: string;
+  driverId: string;
   capacity: number;
   vehicleType: string;
+  idempotencyKey?: string;
 }
 ```
 
@@ -68,11 +66,11 @@ interface RegisterDriverCommand {
 ```typescript
 interface CreateSessionCommand {
   tenantId: string;
+  sessionId: string;
   pickup: { latitude: number; longitude: number };
   destination: { latitude: number; longitude: number };
-  constraints?: {
-    requiredVehicleType?: string;
-  };
+  requiredVehicleType?: string;
+  idempotencyKey?: string;
 }
 ```
 

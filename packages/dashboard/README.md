@@ -1,6 +1,6 @@
 # @motus/dashboard
 
-Operational telemetry, dashboard server, and real-time dashboard UI for the Motus platform.
+Operational telemetry, dashboard server, and real-time dashboard UI for the Vectro platform.
 
 ---
 

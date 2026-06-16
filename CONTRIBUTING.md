@@ -1,4 +1,4 @@
-# Contributing to Motus
+# Contributing to Vectro
 
 We welcome contributions from the community! This document outlines the guidelines for setting up your development environment, testing code changes, checking code quality, and submitting pull requests.
 
@@ -17,7 +17,7 @@ To set up a local development workspace:
 
 1.  Clone the repository and install all dependencies:
     ```bash
-    git clone https://github.com/motus-platform/motus.git
+    git clone https://github.com/bhrji4438/motus.git
     cd motus
     npm install
     ```
@@ -30,16 +30,17 @@ To set up a local development workspace:
 
 ## 2. Monorepo Package Structure
 
-Make modifications in the appropriate workspace directories:
+Vectro is structured as a monorepo containing several internal packages:
 
 - `packages/types/` — Global domain interfaces and types.
 - `packages/core/` — Domain engines, state machines, and workers.
 - `packages/redis/` — Storage repositories and serializations.
-- `packages/socketio/` — Websocket gateway and session recovery.
+- `packages/socketio/` — WebSocket gateway and session recovery.
 - `packages/notifications/` — Push notifications providers and managers.
 - `packages/observability/` — Telemetry tracing, metrics registries, and logger.
 - `packages/testing/` — Reusable mocks and integration builders.
 - `packages/dashboard/` — Admin REST/SSE API and React dashboard UI.
+- `packages/sdk/` — Public SDK facade package `vectro`.
 
 ---
 
@@ -98,7 +99,6 @@ We use **Changesets** to automate package versioning, changelog updates, and pub
     - `minor` — New features (non-breaking).
     - `patch` — Bug fixes, refactoring, and internal modifications.
 4.  **Enter Description**: Provide a brief, human-readable summary of the changes. This summary will populate the packages' local `CHANGELOG.md` files.
-5.  **Commit File**: Commit the generated markdown file inside the `.changeset/` folder alongside your code modifications.
 
 ### Verifying Package Manifests
 
@@ -113,8 +113,6 @@ To run a dry-run local packaging simulation:
 ```bash
 npm run release:publish
 ```
-
-_(This simulates `npm publish` in each package directory using `--dry-run` to ensure npm accepts the packaging bundle structure)._
 
 ---
 
